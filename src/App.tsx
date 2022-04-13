@@ -1,25 +1,34 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import "./App.css?v=1";
+import { createTheme, ThemeProvider, Container } from "@mui/material";
+import TrussForm from "./components/TrussForm";
+import ApiGeometry from "./components/Interfaces/ApiGeometry";
+import HomeBar from "./components/HomeBar";
+import IntroText from "./components/IntroText";
 
 function App() {
+  const theme = createTheme({
+    palette: {
+      primary: {
+        main: "#004aad",
+      },
+      secondary: {
+        main: "#faa92f",
+      },
+    },
+  });
+
+  const [showResult, setShowResult] = useState(false);
+  const [getResults, setResults] = useState<ApiGeometry>();
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Container maxWidth="md">
+      <ThemeProvider theme={theme}>
+        <HomeBar />
+        <IntroText />
+        <TrussForm />
+      </ThemeProvider>
+    </Container>
   );
 }
 
