@@ -1,13 +1,24 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useState, useEffect, useRef } from "react";
 import "./style.css";
 import NumInput from "../NumInput";
 import NumSlider from "../NumSlider";
 import TrussGraph from "../TrussGraph";
 import { FetchGeometry } from "../FetchGeometry";
-import { Grid, Switch, Typography } from "@mui/material";
+import {
+  Grid,
+  Switch,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import { ForceRow, NodeForceControlled } from "../Interfaces/ApiForces";
+import DataTable from "../DataTableControlled";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import { FormatAlignCenterTwoTone } from "@mui/icons-material";
 
 // expected properties to draw beam section
 // interface FormProps {
@@ -30,6 +41,48 @@ export default function TrussForm() {
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
 
+  const generateForces = useCallback(() => {
+    console.log("generate forces");
+    if (geometry?.nodes) {
+      return Object.keys(geometry.nodes).map((key, index) => [index, 0, 0]);
+    } else {
+      return [[0, 0]];
+    }
+  }, [geometry]);
+
+  const [forces, setForces] = useState(generateForces());
+
+  const updateForces = (
+    row: number,
+    col: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    console.log("update forces");
+
+    setForces((oldForces) =>
+      oldForces.map((rowArray, rindex) => {
+        if (rindex === row) {
+          const newRow = [...rowArray];
+          newRow[col] = +e.target.value;
+          return newRow;
+        }
+        return rowArray;
+      })
+    );
+  };
+
+  const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    console.log("handle set span " + event?.target?.value);
+
+    setSpan(+event?.target?.value);
+  };
+
+  const handleSetHeight = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    console.log("handle set height " + event?.target?.value);
+
+    setHeight(+event?.target?.value);
+  };
+
   const handleShowNodeLabels = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShowNodeLabels(event?.target?.checked);
   };
@@ -39,6 +92,14 @@ export default function TrussForm() {
   };
 
   useEffect(() => {
+    console.log("set generate forces");
+
+    setForces(generateForces());
+  }, [geometry?.nodes, generateForces]);
+
+  useEffect(() => {
+    console.log("fetch geometry");
+
     FetchGeometry(span, height, nWeb).then((result) => {
       // setShowResult(result.show); // for forces results
       // const r = setResults ? setResults(result.data) : null; // for forces results
@@ -63,6 +124,8 @@ export default function TrussForm() {
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
+    console.log("resize graph effect");
+
     function resizeGraph() {
       if (graphGridRef.current !== null) {
         setFrameWidth(graphGridRef.current.offsetWidth);
@@ -101,14 +164,14 @@ export default function TrussForm() {
 
   return (
     <Grid container className="small-margins" spacing={3}>
-      <Grid item xs={4} spacing={0} ref={graphGridRef}>
-        <Typography variant="caption" color="textSecondary" gutterBottom>
+      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+        <Typography variant="subtitle2" color="textSecondary">
           Node Labels:
           <Switch checked={showNodeLabels} onChange={handleShowNodeLabels} />
         </Typography>
       </Grid>
-      <Grid item xs={4} spacing={0} ref={graphGridRef}>
-        <Typography variant="caption" color="textSecondary" gutterBottom>
+      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+        <Typography variant="subtitle2" color="textSecondary">
           Member Labels:
           <Switch checked={showMemberLabels} onChange={handleShowMemberLabels} />
         </Typography>
@@ -131,7 +194,7 @@ export default function TrussForm() {
             <NumInput
               label="Truss Span"
               value={span}
-              onChange={setSpan}
+              onChange={handleSetSpan}
               unit="ft"
               min={1}
               max={500}
@@ -143,7 +206,7 @@ export default function TrussForm() {
             <NumInput
               label="Truss Height"
               value={height}
-              onChange={setHeight}
+              onChange={handleSetHeight}
               unit="ft"
               min={1}
               max={200}
@@ -162,6 +225,26 @@ export default function TrussForm() {
             />
           </Grid>
           <br />
+        </Grid>
+        <Grid item xs={6}>
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel1a-content"
+              id="panel1a-header"
+            >
+              <Typography>Truss Loading</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <DataTable
+                headerList={["Node #", "Fx", "Fy"]}
+                dataList={forces}
+                setDataList={updateForces}
+                firstColumnEditable={false}
+                title="Node Forces (kips)"
+              />
+            </AccordionDetails>
+          </Accordion>
         </Grid>
       </Grid>
     </Grid>
