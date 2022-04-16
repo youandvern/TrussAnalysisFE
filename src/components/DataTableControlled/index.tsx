@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./style.css";
 import {
   TableContainer,
@@ -10,14 +10,13 @@ import {
   Paper,
   TableBody,
 } from "@mui/material/";
-import { ForceRow } from "../Interfaces/ApiForces";
 import { NumInputSimple } from "../NumInput";
 
 // expected properties given to DataTable
 interface TableProps {
   headerList: string[];
   dataList: number[][];
-  setDataList: (
+  setDataList?: (
     row: number,
     col: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -43,11 +42,9 @@ export default function DataTable({
         <TableHead>
           <TableRow>
             {headerList.map((header, hindex) => (
-              <TableCell
-                className="title-text"
-                key={"header" + hindex}
-                dangerouslySetInnerHTML={{ __html: header }}
-              ></TableCell>
+              <TableCell className="title-text" key={"header" + hindex}>
+                <Typography>{header}</Typography>
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>
@@ -55,13 +52,16 @@ export default function DataTable({
           {dataList.map((row, rindex) => (
             <TableRow key={"datarow" + rindex}>
               {row.map((cell, cindex) => {
-                return cindex === 0 && !firstColumnEditable ? (
+                return !setDataList || (cindex === 0 && !firstColumnEditable) ? (
                   <TableCell key={"data" + rindex + "-" + cindex}>
                     <Typography>{cell}</Typography>
                   </TableCell>
                 ) : (
                   <TableCell className="data-cell" key={"data" + rindex + "-" + cindex}>
-                    <NumInputSimple value={cell} onChange={(e) => setDataList(rindex, cindex, e)} />
+                    <NumInputSimple
+                      value={cell}
+                      onChange={(e) => (setDataList ? setDataList(rindex, cindex, e) : null)}
+                    />
                   </TableCell>
                 );
               })}

@@ -3,7 +3,7 @@ export default interface ApiGeometry {
   members: Members;
 }
 
-interface Nodes {
+export interface Nodes {
   [key: string]: Node;
 }
 
@@ -13,7 +13,7 @@ export interface Node {
   fixity: string;
 }
 
-interface Members {
+export interface Members {
   [key: string]: Member;
 }
 

@@ -12,13 +12,17 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Button,
 } from "@mui/material";
 import { ForceRow, NodeForceControlled } from "../Interfaces/ApiForces";
 import DataTable from "../DataTableControlled";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import ApiForces, { emptyApiForces } from "../Interfaces/ApiForces";
 import { FormatAlignCenterTwoTone } from "@mui/icons-material";
+import { FetchForces } from "../FetchForces";
+import MemberForceResults from "../MemberForceResults";
 
 // expected properties to draw beam section
 // interface FormProps {
@@ -41,16 +45,16 @@ export default function TrussForm() {
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
 
+  const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
+
   const generateForces = useCallback(() => {
     console.log("generate forces");
-    if (geometry?.nodes) {
-      return Object.keys(geometry.nodes).map((key, index) => [index, 0, 0]);
-    } else {
-      return [[0, 0]];
-    }
-  }, [geometry]);
+    let forcest = Array<number>(nNodes).fill(0);
+    return forcest.map((forces, index) => [index, 0, 0]);
+  }, [nNodes]);
 
   const [forces, setForces] = useState(generateForces());
+  const [showForces, setShowForces] = useState(false);
 
   const updateForces = (
     row: number,
@@ -70,6 +74,9 @@ export default function TrussForm() {
       })
     );
   };
+
+  const [showMemberForces, setShowMemberForces] = useState(false);
+  const [memberForces, setMemberForces] = useState(emptyApiForces);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     console.log("handle set span " + event?.target?.value);
@@ -95,7 +102,7 @@ export default function TrussForm() {
     console.log("set generate forces");
 
     setForces(generateForces());
-  }, [geometry?.nodes, generateForces]);
+  }, [nWeb, generateForces]);
 
   useEffect(() => {
     console.log("fetch geometry");
@@ -107,20 +114,16 @@ export default function TrussForm() {
     });
   }, [span, height, nWeb]);
 
-  // const updateResult = useCallback(() => {
-  //   const concrete_props: ConcreteProps = {
-  //     fc: fc,
-  //     fy: fy,
-  //     Es: 29000,
-  //     b: w,
-  //     h: h,
-  //   };
+  const updateMemberForces = useCallback(() => {
+    FetchForces(span, height, nWeb, forces).then((result) => {
+      console.log("fetch forces");
+      console.log(result);
 
-  //   FetchResults(barProps, concrete_props).then((result) => {
-  //     setShowResult(result.show);
-  //     setGetBeam(result.data);
-  //   });
-  // }, [fc, fy, w, h, barProps, setShowResult, setGetBeam]);
+      setShowForces(!result.show);
+      setShowMemberForces(result.show);
+      setMemberForces(result.data);
+    });
+  }, [span, height, nWeb, forces]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
@@ -143,6 +146,7 @@ export default function TrussForm() {
   }, []);
 
   // hide results if any input changes
+  useEffect(() => setShowMemberForces(false), [span, height, nWeb, forces]);
   // useEffect(() => {
   //   setShowResult(false);
   // }, [
@@ -224,27 +228,40 @@ export default function TrussForm() {
               step={1}
             />
           </Grid>
-          <br />
-        </Grid>
-        <Grid item xs={6}>
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-              id="panel1a-header"
+
+          <Grid item xs={8}>
+            <Accordion
+              expanded={showForces}
+              onChange={(e, expanded) => {
+                setShowForces(expanded);
+              }}
             >
-              <Typography>Truss Loading</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <DataTable
-                headerList={["Node #", "Fx", "Fy"]}
-                dataList={forces}
-                setDataList={updateForces}
-                firstColumnEditable={false}
-                title="Node Forces (kips)"
-              />
-            </AccordionDetails>
-          </Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1a-content"
+                id="panel1a-header"
+              >
+                <Typography>Truss Loading</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <DataTable
+                  headerList={["Node", "Fx", "Fy"]}
+                  dataList={forces}
+                  setDataList={updateForces}
+                  firstColumnEditable={false}
+                  title="Node Forces (kips)"
+                />
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+          <Grid item xs={4}>
+            <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
+              Calculate Forces
+            </Button>
+          </Grid>
+          <Grid item xs={12}>
+            <MemberForceResults showResult={showMemberForces} memberForceResults={memberForces} />
+          </Grid>
         </Grid>
       </Grid>
     </Grid>
