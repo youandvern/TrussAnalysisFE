@@ -256,11 +256,11 @@ export default function TrussForm() {
               </AccordionSummary>
               <AccordionDetails>
                 <DataTable
-                  headerList={["Node", "Fx", "Fy"]}
+                  headerList={["Node", "Fx (kips)", "Fy (kips)"]}
                   dataList={forces}
                   setDataList={updateForces}
                   firstColumnEditable={false}
-                  title="Node Forces (kips)"
+                  title="Node Forces"
                 />
               </AccordionDetails>
             </Accordion>

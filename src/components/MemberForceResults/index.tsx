@@ -18,7 +18,7 @@ export default function MemberForceResults({
         <DataTable
           headerList={memberForceResults.memberForcesHeaders}
           dataList={memberForceResults.memberForces}
-          title="Member Forces (-Tension/+Compression) [kips]"
+          title="Member Forces (-Tension/+Compression)"
         />
       </Container>
     </Collapse>

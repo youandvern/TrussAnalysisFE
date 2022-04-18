@@ -51,16 +51,18 @@ export const FetchForces = (
     console.log(unparsed_data);
 
     if (unparsed_data.nodes && unparsed_data.members && unparsed_data.memberForces) {
-      // Should refactor to not mutate unparsed_data.
-      unparsed_data.memberForces.forEach((force) => {
-        force[3] = Math.abs(force[3]) < 0.0001 ? 0 : +force[3].toPrecision(4);
-      });
       data = {
-        memberForcesHeaders: ["Member ID", "Start -> End Node", "Axial Force"],
+        memberForcesHeaders: [
+          "Member ID",
+          "Start -> End Node",
+          "Length (ft)",
+          "Axial Force (kips)",
+        ],
         memberForces: unparsed_data.memberForces.map((force) => [
           force[0],
           memberNodesFormatter(force[1], force[2]),
-          force[3],
+          Math.abs(force[3]) < 0.0001 ? 0 : +force[3].toPrecision(4),
+          Math.abs(force[4]) < 0.0001 ? 0 : +force[4].toPrecision(4),
         ]),
       };
       show = true;
