@@ -50,21 +50,19 @@ export default function NumInput({
 export function NumInputSimple({ value = 0, onChange, unit, min, max, step }: NumProps) {
   return (
     // outlined group of label and input
-    <FormControl fullWidth variant="outlined">
-      <OutlinedInput
-        value={value}
-        // change the value whenever the input is changed (restrict within min/max bounds)
-        onChange={onChange}
-        // add unit to the end
-        endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
-        aria-describedby="standard-weight-helper-text"
-        type="number"
-        inputProps={{
-          min: min,
-          max: max,
-          step: step,
-        }}
-      />
-    </FormControl>
+    <OutlinedInput
+      value={value}
+      // change the value whenever the input is changed (restrict within min/max bounds)
+      onChange={onChange}
+      // add unit to the end
+      endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
+      aria-describedby="standard-weight-helper-text"
+      type="number"
+      inputProps={{
+        min: min,
+        max: max,
+        step: step,
+      }}
+    />
   );
 }

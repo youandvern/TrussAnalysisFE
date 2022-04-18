@@ -14,7 +14,12 @@ import {
   AccordionDetails,
   Button,
 } from "@mui/material";
-import { ForceRow, NodeForceControlled } from "../Interfaces/ApiForces";
+import {
+  emptyApiForcesParsed,
+  ForceRow,
+  MemberForcesSummary,
+  NodeForceControlled,
+} from "../Interfaces/ApiForces";
 import DataTable from "../DataTableControlled";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -23,6 +28,7 @@ import ApiForces, { emptyApiForces } from "../Interfaces/ApiForces";
 import { FormatAlignCenterTwoTone } from "@mui/icons-material";
 import { FetchForces } from "../FetchForces";
 import MemberForceResults from "../MemberForceResults";
+import { dataToColorScale } from "../Utilities/DataToColorscale";
 
 // expected properties to draw beam section
 // interface FormProps {
@@ -55,6 +61,7 @@ export default function TrussForm() {
 
   const [forces, setForces] = useState(generateForces());
   const [showForces, setShowForces] = useState(false);
+  const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
 
   const updateForces = (
     row: number,
@@ -76,7 +83,7 @@ export default function TrussForm() {
   };
 
   const [showMemberForces, setShowMemberForces] = useState(false);
-  const [memberForces, setMemberForces] = useState(emptyApiForces);
+  const [memberForces, setMemberForces] = useState(emptyApiForcesParsed);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     console.log("handle set span " + event?.target?.value);
@@ -115,15 +122,33 @@ export default function TrussForm() {
   }, [span, height, nWeb]);
 
   const updateMemberForces = useCallback(() => {
-    FetchForces(span, height, nWeb, forces).then((result) => {
+    // Flip y-axis direction
+    const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
+    FetchForces(span, height, nWeb, forcesCorrected).then((result) => {
       console.log("fetch forces");
-      console.log(result);
 
+      // Get spread of forces for color calculations
+      let max = result.data.memberForces[0][2];
+      let min = result.data.memberForces[0][2];
+      result.data.memberForces.forEach((force) => {
+        max = Math.max(max, force[2]);
+        min = Math.min(min, force[2]);
+      });
+
+      // Set colors based on forces
+      result.data.memberForces.forEach((force) => {
+        const member = geometry?.members[force[0].toString()];
+        if (member) {
+          member.color = dataToColorScale(force[2], max, min);
+        }
+      });
+
+      setMemberForcesSummary({ max: max, min: min });
       setShowForces(!result.show);
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
-  }, [span, height, nWeb, forces]);
+  }, [span, height, nWeb, forces, geometry?.members]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
@@ -146,25 +171,10 @@ export default function TrussForm() {
   }, []);
 
   // hide results if any input changes
-  useEffect(() => setShowMemberForces(false), [span, height, nWeb, forces]);
-  // useEffect(() => {
-  //   setShowResult(false);
-  // }, [
-  //   nbars,
-  //   barsize,
-  //   nbarst,
-  //   barsizet,
-  //   side_cover,
-  //   bot_cover,
-  //   top_cover,
-  //   w,
-  //   h,
-  //   nlegs,
-  //   legsize,
-  //   fc,
-  //   fy,
-  //   setShowResult,
-  // ]);
+  useEffect(() => {
+    setShowMemberForces(false);
+    setMemberForcesSummary(undefined);
+  }, [span, height, nWeb, forces]);
 
   return (
     <Grid container className="small-margins" spacing={3}>
@@ -189,6 +199,7 @@ export default function TrussForm() {
             frameHeight={frameHeight}
             showNodeLabels={showNodeLabels}
             showMemberLabels={showMemberLabels}
+            memberForcesSummary={memberForcesSummary}
           />
         )}
       </Grid>
@@ -224,7 +235,7 @@ export default function TrussForm() {
               value={nWeb}
               onChange={setNWeb}
               min={1}
-              max={25}
+              max={10}
               step={1}
             />
           </Grid>

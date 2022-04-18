@@ -1,16 +1,16 @@
 import React from "react";
 import { Collapse, Container, Grid, Typography, Button } from "@mui/material";
 import DataTable from "../DataTableControlled";
-import ApiForces, { emptyApiForces } from "../Interfaces/ApiForces";
+import { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/ApiForces";
 
 interface MemberForceResultProps {
   showResult: boolean;
-  memberForceResults: ApiForces;
+  memberForceResults: ApiForcesParsed;
 }
 
 export default function MemberForceResults({
   showResult = false,
-  memberForceResults = emptyApiForces,
+  memberForceResults = emptyApiForcesParsed,
 }: MemberForceResultProps) {
   return (
     <Collapse in={showResult}>

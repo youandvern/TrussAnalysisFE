@@ -1,8 +1,10 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import "./style.css";
-import { Stage, Layer, Line, Circle, Text, Label, Tag } from "react-konva";
+import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import { dataToColorScale } from "../Utilities/DataToColorscale";
+import { MemberForcesSummary } from "../Interfaces/ApiForces";
 
 interface GeometryProps {
   globalGeometry: ApiGeometryGlobal;
@@ -11,6 +13,7 @@ interface GeometryProps {
   frameWidth: number;
   showNodeLabels: boolean;
   showMemberLabels: boolean;
+  memberForcesSummary?: MemberForcesSummary;
 }
 
 // Graph canvas to display truss
@@ -21,6 +24,7 @@ export default function TrussGraph({
   frameWidth,
   showNodeLabels,
   showMemberLabels,
+  memberForcesSummary,
 }: GeometryProps) {
   const trussHeight = globalGeometry.height;
   const trussWidth = globalGeometry.span;
@@ -30,6 +34,77 @@ export default function TrussGraph({
   const sceneHeight = trussHeight + border + borderBot;
   const sceneWidth = trussWidth + 2 * border;
   const fscale = Math.min(frameHeight / sceneHeight, frameWidth / sceneWidth);
+
+  const forceScale = (xp: number, yp: number, length: number, min: number, max: number) => {
+    const width = length / 15;
+    const fontSize = 1.25 * width;
+    const mid = (max + min) / 2;
+    return (
+      <>
+        <Rect
+          x={xp}
+          y={yp}
+          width={width}
+          height={length}
+          fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+          fillLinearGradientEndPoint={{ x: 0, y: length }}
+          fillLinearGradientColorStops={[
+            0,
+            dataToColorScale(1, 1, 0),
+            1,
+            dataToColorScale(0, 1, 0),
+          ]}
+        />
+        <Text
+          x={xp - (fontSize / 2) * max.toPrecision(3).length}
+          y={yp - fontSize / 2}
+          fontSize={fontSize}
+          text={max.toPrecision(3)}
+        />
+        <Text
+          x={xp - (fontSize / 2) * mid.toPrecision(3).length}
+          y={yp - fontSize / 2 + length / 2}
+          fontSize={fontSize}
+          text={mid.toPrecision(3)}
+        />
+        <Text
+          x={xp - (fontSize / 2) * min.toPrecision(3).length}
+          y={yp - fontSize / 2 + length}
+          fontSize={fontSize}
+          text={min.toPrecision(3)}
+        />
+        <Circle x={xp + width / 2} y={yp} fill="black" radius={width / 3} />
+        <Circle x={xp + width / 2} y={yp + length / 2} fill="black" radius={width / 3} />
+        <Circle x={xp + width / 2} y={yp + length} fill="black" radius={width / 3} />
+      </>
+    );
+  };
+
+  const axes = (xp: number, yp: number, aSize: number) => {
+    return (
+      <>
+        <Arrow
+          points={[xp, -yp, xp + aSize, -yp]}
+          stroke="black"
+          strokeWidth={aSize / 10}
+          pointerLength={aSize / 5}
+          pointerWidth={aSize / 5}
+          fillAfterStrokeEnabled
+        />
+        <Arrow
+          points={[xp, -yp, xp, -yp + aSize]}
+          stroke="black"
+          strokeWidth={aSize / 10}
+          pointerLength={aSize / 5}
+          pointerWidth={aSize / 5}
+          fillAfterStrokeEnabled
+        />
+        <Circle x={xp} y={-yp} radius={aSize / 10} fill="black" />
+        <Text x={xp + aSize} y={-yp} text={"x"} fontSize={aSize / 2} />
+        <Text x={xp + aSize / 5} y={-yp + aSize - aSize / 5} text={"y"} fontSize={aSize / 2} />
+      </>
+    );
+  };
 
   const pinMarker = (xp: number, yp: number, pSize: number) => {
     const pLength = 1.5;
@@ -109,6 +184,8 @@ export default function TrussGraph({
         x={border * fscale}
         y={frameHeight - borderBot * fscale}
       >
+        {axes(0, frameHeight / fscale - 5 * nodeSize - border, 5 * nodeSize)}
+
         {Object.entries(trussGeometry.members).map(([iMember, member]) => {
           const points = {
             x1: trussGeometry.nodes[member.start].x,
@@ -121,8 +198,11 @@ export default function TrussGraph({
               <Line
                 key={"member-" + iMember}
                 points={[points.x1, -1 * points.y1, points.x2, -1 * points.y2]}
-                stroke="blue"
+                stroke={member.color && memberForcesSummary ? member.color : "blue"}
                 strokeWidth={nodeSize}
+                fill={"red"}
+                width={nodeSize}
+                fillEnabled
                 fillAfterStrokeEnabled
               />
               {showMemberLabels &&
@@ -141,6 +221,14 @@ export default function TrussGraph({
             </>
           );
         })}
+        {memberForcesSummary &&
+          forceScale(
+            trussWidth + 1 * nodeSize,
+            -(0.8 * frameHeight) / fscale,
+            (0.6 * frameHeight) / fscale,
+            memberForcesSummary.min,
+            memberForcesSummary.max
+          )}
       </Layer>
     </Stage>
   );

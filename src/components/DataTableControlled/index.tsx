@@ -15,7 +15,7 @@ import { NumInputSimple } from "../NumInput";
 // expected properties given to DataTable
 interface TableProps {
   headerList: string[];
-  dataList: number[][];
+  dataList: any[][];
   setDataList?: (
     row: number,
     col: number,
@@ -52,7 +52,9 @@ export default function DataTable({
           {dataList.map((row, rindex) => (
             <TableRow key={"datarow" + rindex}>
               {row.map((cell, cindex) => {
-                return !setDataList || (cindex === 0 && !firstColumnEditable) ? (
+                return !setDataList ||
+                  typeof cell !== "number" ||
+                  (cindex === 0 && !firstColumnEditable) ? (
                   <TableCell key={"data" + rindex + "-" + cindex}>
                     <Typography>{cell}</Typography>
                   </TableCell>

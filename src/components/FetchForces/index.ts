@@ -1,12 +1,17 @@
-import ApiForces, { emptyApiForces } from "../Interfaces/ApiForces";
+import ApiForces, {
+  ApiForcesParsed,
+  emptyApiForces,
+  emptyApiForcesParsed,
+} from "../Interfaces/ApiForces";
 import ApiGeometry from "../Interfaces/ApiGeometry";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
 interface FetchForcesObject {
   show: boolean;
-  data: ApiForces;
+  data: ApiForcesParsed;
 }
 
 export const FetchForces = (
@@ -29,7 +34,7 @@ export const FetchForces = (
 
   const fetchData = async () => {
     let show = false;
-    let data = emptyApiForces;
+    let data = emptyApiForcesParsed;
 
     const res = await fetch("http://127.0.0.1:5000/api/TrussForces", {
       method: "POST",
@@ -46,11 +51,18 @@ export const FetchForces = (
     console.log(unparsed_data);
 
     if (unparsed_data.nodes && unparsed_data.members && unparsed_data.memberForces) {
-      unparsed_data.memberForces.map((force) => {
+      // Should refactor to not mutate unparsed_data.
+      unparsed_data.memberForces.forEach((force) => {
         force[3] = Math.abs(force[3]) < 0.0001 ? 0 : +force[3].toPrecision(4);
-        return force;
       });
-      data = unparsed_data;
+      data = {
+        memberForcesHeaders: ["Member ID", "Start -> End Node", "Axial Force"],
+        memberForces: unparsed_data.memberForces.map((force) => [
+          force[0],
+          memberNodesFormatter(force[1], force[2]),
+          force[3],
+        ]),
+      };
       show = true;
     }
 

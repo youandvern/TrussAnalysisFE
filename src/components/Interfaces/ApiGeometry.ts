@@ -21,6 +21,7 @@ export interface Member {
   start: number;
   end: number;
   type: string;
+  color?: string;
 }
 
 export interface ApiGeometryGlobal {
