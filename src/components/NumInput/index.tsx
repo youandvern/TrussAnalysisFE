@@ -16,7 +16,7 @@ interface NumProps {
 // typical number input for concrete beam design form
 export default function NumInput({
   label = "label",
-  value = 1,
+  value,
   onChange,
   unit = "in",
   min = 0,
@@ -29,6 +29,7 @@ export default function NumInput({
       <InputLabel>{label}</InputLabel>
       <OutlinedInput
         label={label}
+        name={label}
         value={value}
         // change the value whenever the input is changed (restrict within min/max bounds)
         onChange={onChange}

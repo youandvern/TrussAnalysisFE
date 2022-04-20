@@ -4,7 +4,7 @@ import "./style.css";
 import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { MemberForcesSummary } from "../Interfaces/ApiForces";
+import { MemberForcesSummary, NodeForceSimple, NodeForcesSimple } from "../Interfaces/ApiForces";
 
 interface GeometryProps {
   globalGeometry: ApiGeometryGlobal;
@@ -13,6 +13,8 @@ interface GeometryProps {
   frameWidth: number;
   showNodeLabels: boolean;
   showMemberLabels: boolean;
+  showForceArrows: boolean;
+  nodeForces?: NodeForcesSimple;
   memberForcesSummary?: MemberForcesSummary;
 }
 
@@ -24,6 +26,8 @@ export default function TrussGraph({
   frameWidth,
   showNodeLabels,
   showMemberLabels,
+  showForceArrows,
+  nodeForces,
   memberForcesSummary,
 }: GeometryProps) {
   const trussHeight = globalGeometry.height;
@@ -34,6 +38,35 @@ export default function TrussGraph({
   const sceneHeight = trussHeight + border + borderBot;
   const sceneWidth = trussWidth + 2 * border;
   const fscale = Math.min(frameHeight / sceneHeight, frameWidth / sceneWidth);
+
+  const forceArrows = (xp: number, yp: number, fx: number, fy: number, aSize: number) => {
+    const xdir = fx < 0 ? -1 : 1;
+    const ydir = fy < 0 ? -1 : 1;
+    return (
+      <>
+        {fx !== 0 && (
+          <Arrow
+            points={[xp, yp, xp + xdir * aSize, yp]}
+            stroke="red"
+            strokeWidth={aSize / 7}
+            pointerLength={aSize / 3}
+            pointerWidth={aSize / 3}
+            fillAfterStrokeEnabled
+          />
+        )}
+        {fy !== 0 && (
+          <Arrow
+            points={[xp, yp, xp, yp + ydir * aSize]}
+            stroke="red"
+            strokeWidth={aSize / 7}
+            pointerLength={aSize / 3}
+            pointerWidth={aSize / 3}
+            fillAfterStrokeEnabled
+          />
+        )}
+      </>
+    );
+  };
 
   const forceScale = (xp: number, yp: number, length: number, min: number, max: number) => {
     const width = length / 15;
@@ -212,10 +245,13 @@ export default function TrussGraph({
         })}
 
         {Object.entries(trussGeometry.nodes).map(([iNode, node]) => {
+          const thisNodeForce = showForceArrows && nodeForces && nodeForces[iNode];
           return (
             <>
               {node.fixity === "pin" && pinMarker(node.x, node.y - nodeSize / 2, nodeSize)}
               {node.fixity === "roller" && rollerMarker(node.x, node.y - nodeSize, nodeSize)}
+              {thisNodeForce &&
+                forceArrows(node.x, -node.y, thisNodeForce.fx, -thisNodeForce.fy, 4 * nodeSize)}
               <Circle x={node.x} y={-node.y} fill="black" radius={nodeSize} key={"node-" + iNode} />
               {showNodeLabels && nodeLabel(node.x, -1 * node.y, iNode, nodeSize)}
             </>

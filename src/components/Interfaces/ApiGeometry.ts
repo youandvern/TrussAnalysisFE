@@ -1,6 +1,8 @@
 export default interface ApiGeometry {
   nodes: Nodes;
   members: Members;
+  topNodeIds?: number[];
+  botNodeIds?: number[];
 }
 
 export interface Nodes {

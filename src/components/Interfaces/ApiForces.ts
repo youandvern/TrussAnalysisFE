@@ -24,6 +24,15 @@ export interface ForceRow {
   fy: NodeForceControlled;
 }
 
+export interface NodeForcesSimple {
+  [key: string]: NodeForceSimple;
+}
+
+export interface NodeForceSimple {
+  fx: number;
+  fy: number;
+}
+
 export interface MemberForcesSummary {
   min: number;
   max: number;

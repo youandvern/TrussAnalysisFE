@@ -13,12 +13,15 @@ import {
   AccordionSummary,
   AccordionDetails,
   Button,
+  FormGroup,
 } from "@mui/material";
 import {
   emptyApiForcesParsed,
   ForceRow,
   MemberForcesSummary,
   NodeForceControlled,
+  NodeForceSimple,
+  NodeForcesSimple,
 } from "../Interfaces/ApiForces";
 import DataTable from "../DataTableControlled";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -38,38 +41,47 @@ import { dataToColorScale } from "../Utilities/DataToColorscale";
 
 // Beam shape in input form for beam capacity calculation
 export default function TrussForm() {
-  const [span, setSpan] = useState(12);
+  const [span, setSpan] = useState(16);
   const [height, setHeight] = useState(4);
   const [nWeb, setNWeb] = useState(1);
   const [geometry, setGeometry] = useState<ApiGeometry>();
 
   const [frameWidth, setFrameWidth] = useState(window.innerWidth / 2);
   const [frameHeight, setFrameHeight] = useState(window.innerHeight / 2);
+  const [topNodes, setTopNodes] = useState<number[]>();
 
   const graphGridRef = useRef<HTMLDivElement>(null);
 
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
+  const [showForceArrows, setShowForceArrows] = useState(true);
 
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
 
-  const generateForces = useCallback(() => {
-    console.log("generate forces");
-    let forcest = Array<number>(nNodes).fill(0);
-    return forcest.map((forces, index) => [index, 0, 0]);
-  }, [nNodes]);
+  const generateForces = (nForces: number) => {
+    let forcest = Array<number>(nForces).fill(0);
+    return forcest.map((forcex, index) => [index, 0, 0]);
+  };
 
-  const [forces, setForces] = useState(generateForces());
+  const generateForceArrows = (nForces: number) => {
+    let forceArrows = {} as NodeForcesSimple;
+    for (let i = 0; i < nForces; i++) {
+      forceArrows[i.toString()] = { fx: 0, fy: 0 } as NodeForceSimple;
+    }
+    return forceArrows;
+  };
+
+  const [forces, setForces] = useState(generateForces(nNodes));
   const [showForces, setShowForces] = useState(false);
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
+  const [forceArrows, setForceArrows] = useState(generateForceArrows(nNodes));
+  const setTopForcesForm = useRef(null);
 
   const updateForces = (
     row: number,
     col: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    console.log("update forces");
-
     setForces((oldForces) =>
       oldForces.map((rowArray, rindex) => {
         if (rindex === row) {
@@ -80,21 +92,62 @@ export default function TrussForm() {
         return rowArray;
       })
     );
+
+    updateForceArrows(
+      row.toString(),
+      col === 1 ? +e.target.value : undefined,
+      col === 2 ? +e.target.value : undefined
+    );
+  };
+
+  const updateForceArrows = (nodeId: string, fx?: number, fy?: number) => {
+    setForceArrows((oldForceArrows) => {
+      let newForce = oldForceArrows[nodeId];
+      const newForceArrows = { ...oldForceArrows };
+      if (fx != null) {
+        newForce = { ...newForce, fx: fx };
+      }
+      if (fy != null) {
+        newForce = { ...newForce, fy: fy };
+      }
+
+      newForceArrows[nodeId] = newForce;
+      return newForceArrows;
+    });
   };
 
   const [showMemberForces, setShowMemberForces] = useState(false);
   const [memberForces, setMemberForces] = useState(emptyApiForcesParsed);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    console.log("handle set span " + event?.target?.value);
-
     setSpan(+event?.target?.value);
   };
 
   const handleSetHeight = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    console.log("handle set height " + event?.target?.value);
-
     setHeight(+event?.target?.value);
+  };
+
+  const handleSetNodeForces = (nodeIds?: number[]) => {
+    const form = setTopForcesForm.current;
+    if (nodeIds && form) {
+      const fx = +form["Fx"]["value"] || 0;
+      const fy = +form["Fy"]["value"] || 0;
+      setForces((oldForces) =>
+        oldForces.map((rowArray, rindex) => {
+          if (nodeIds.includes(rindex)) {
+            const newRow = [...rowArray];
+
+            newRow[1] = fx;
+            newRow[2] = fy;
+            return newRow;
+          }
+          return rowArray;
+        })
+      );
+      nodeIds.forEach((nodeId) => updateForceArrows(nodeId.toString(), fx, fy));
+    } else {
+      console.log("Error: top nodes not found.");
+    }
   };
 
   const handleShowNodeLabels = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,15 +158,16 @@ export default function TrussForm() {
     setShowMemberLabels(event?.target?.checked);
   };
 
-  useEffect(() => {
-    console.log("set generate forces");
-
-    setForces(generateForces());
-  }, [nWeb, generateForces]);
+  const handleShowForceArrows = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setShowForceArrows(event?.target?.checked);
+  };
 
   useEffect(() => {
-    console.log("fetch geometry");
+    setForceArrows(generateForceArrows(nNodes));
+    setForces(generateForces(nNodes));
+  }, [nWeb, nNodes]);
 
+  useEffect(() => {
     FetchGeometry(span, height, nWeb).then((result) => {
       // setShowResult(result.show); // for forces results
       // const r = setResults ? setResults(result.data) : null; // for forces results
@@ -125,21 +179,19 @@ export default function TrussForm() {
     // Flip y-axis direction
     const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
     FetchForces(span, height, nWeb, forcesCorrected).then((result) => {
-      console.log("fetch forces");
-
       // Get spread of forces for color calculations
-      let max = result.data.memberForces[0][2];
-      let min = result.data.memberForces[0][2];
+      let max = result.data.memberForces[0][3];
+      let min = result.data.memberForces[0][3];
       result.data.memberForces.forEach((force) => {
-        max = Math.max(max, force[2]);
-        min = Math.min(min, force[2]);
+        max = Math.max(max, force[3]);
+        min = Math.min(min, force[3]);
       });
 
       // Set colors based on forces
       result.data.memberForces.forEach((force) => {
         const member = geometry?.members[force[0].toString()];
         if (member) {
-          member.color = dataToColorScale(force[2], max, min);
+          member.color = dataToColorScale(force[3], max, min);
         }
       });
 
@@ -152,8 +204,6 @@ export default function TrussForm() {
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
-    console.log("resize graph effect");
-
     function resizeGraph() {
       if (graphGridRef.current !== null) {
         setFrameWidth(graphGridRef.current.offsetWidth);
@@ -190,6 +240,12 @@ export default function TrussForm() {
           <Switch checked={showMemberLabels} onChange={handleShowMemberLabels} />
         </Typography>
       </Grid>
+      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+        <Typography variant="subtitle2" color="textSecondary">
+          Force Arrows:
+          <Switch checked={showForceArrows} onChange={handleShowForceArrows} />
+        </Typography>
+      </Grid>
       <Grid item xs={12} spacing={0} ref={graphGridRef}>
         {geometry && (
           <TrussGraph
@@ -199,7 +255,9 @@ export default function TrussForm() {
             frameHeight={frameHeight}
             showNodeLabels={showNodeLabels}
             showMemberLabels={showMemberLabels}
+            showForceArrows={showForceArrows}
             memberForcesSummary={memberForcesSummary}
+            nodeForces={forceArrows}
           />
         )}
       </Grid>
@@ -255,6 +313,36 @@ export default function TrussForm() {
                 <Typography>Truss Loading</Typography>
               </AccordionSummary>
               <AccordionDetails>
+                <form ref={setTopForcesForm}>
+                  <Grid
+                    container
+                    spacing={1}
+                    sx={{
+                      borderBottom: 1,
+                      paddingBottom: "0.5em",
+                      marginBottom: "0.5em",
+                      borderColor: "grey.600",
+                    }}
+                  >
+                    <Grid item xs={4}>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        color="primary"
+                        onClick={() => handleSetNodeForces(geometry?.topNodeIds)}
+                        sx={{ height: "100%" }}
+                      >
+                        All Top Nodes:
+                      </Button>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <NumInput label="Fx" unit="kips" />
+                    </Grid>
+                    <Grid item xs={4}>
+                      <NumInput label="Fy" unit="kips" />
+                    </Grid>
+                  </Grid>
+                </form>
                 <DataTable
                   headerList={["Node", "Fx (kips)", "Fy (kips)"]}
                   dataList={forces}
