@@ -1,10 +1,10 @@
 import React from "react";
-import { useState, useEffect } from "react";
 import "./style.css";
 import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
+
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { MemberForcesSummary, NodeForceSimple, NodeForcesSimple } from "../Interfaces/ApiForces";
+import { MemberForcesSummary, NodeForcesSimple } from "../Interfaces/ApiForces";
 
 interface GeometryProps {
   globalGeometry: ApiGeometryGlobal;
@@ -257,6 +257,7 @@ export default function TrussGraph({
             </>
           );
         })}
+
         {memberForcesSummary &&
           forceScale(
             trussWidth + 1 * nodeSize,

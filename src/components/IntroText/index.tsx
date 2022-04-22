@@ -13,9 +13,10 @@ export default function IntroText() {
           <Typography variant="h5">Pratt Roof Truss Analysis Tool:</Typography>
 
           <Typography>
-            Welcome to the analysis tool. A simple, fast, and powerful tool for getting the axial
-            load demands for a pratt-style roof truss. Please explore the tool and our open source
-            calculation building application, <a href="https://encompapp.com/">Encomp</a>. <br />
+            Welcome to the truss analysis tool. A simple, fast, and powerful tool for getting the
+            axial load demands for a pratt-style roof truss. Please explore the tool and our open
+            source calculation building application, <a href="https://encompapp.com/">Encomp</a>.{" "}
+            <br />
             <br />
             If you liked the tool or want to see other features added, please leave us a message at{" "}
             <a href="https://encompapp.com/contact">encompapp.com/contact</a>, we would love to hear

@@ -1,9 +1,4 @@
-import ApiForces, {
-  ApiForcesParsed,
-  emptyApiForces,
-  emptyApiForcesParsed,
-} from "../Interfaces/ApiForces";
-import ApiGeometry from "../Interfaces/ApiGeometry";
+import ApiForces, { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/ApiForces";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 

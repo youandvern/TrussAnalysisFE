@@ -1,45 +1,34 @@
 import React, { useCallback } from "react";
 import { useState, useEffect, useRef } from "react";
 import "./style.css";
-import NumInput from "../NumInput";
-import NumSlider from "../NumSlider";
-import TrussGraph from "../TrussGraph";
-import { FetchGeometry } from "../FetchGeometry";
+
 import {
   Grid,
-  Switch,
   Typography,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Button,
-  FormGroup,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
+import NumInput from "../NumInput";
+import NumSlider from "../NumSlider";
+import TrussGraph from "../TrussGraph";
+import { FetchGeometry } from "../FetchGeometry";
 import {
   emptyApiForcesParsed,
-  ForceRow,
   MemberForcesSummary,
-  NodeForceControlled,
   NodeForceSimple,
   NodeForcesSimple,
 } from "../Interfaces/ApiForces";
 import DataTable from "../DataTableControlled";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
-import ApiForces, { emptyApiForces } from "../Interfaces/ApiForces";
-import { FormatAlignCenterTwoTone } from "@mui/icons-material";
 import { FetchForces } from "../FetchForces";
 import MemberForceResults from "../MemberForceResults";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
 import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
-
-// expected properties to draw beam section
-// interface FormProps {
-//   setShowResult: React.Dispatch<React.SetStateAction<boolean>>;
-//   setResults?: React.Dispatch<React.SetStateAction<ApiGeometry>>;
-// }
 
 // Beam shape in input form for beam capacity calculation
 export default function TrussForm() {
@@ -47,18 +36,16 @@ export default function TrussForm() {
   const [height, setHeight] = useState(4);
   const [nWeb, setNWeb] = useState(1);
   const [geometry, setGeometry] = useState<ApiGeometry>();
+  const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
 
   const [frameWidth, setFrameWidth] = useState(window.innerWidth / 2);
   const [frameHeight, setFrameHeight] = useState(window.innerHeight / 2);
-  const [topNodes, setTopNodes] = useState<number[]>();
 
   const graphGridRef = useRef<HTMLDivElement>(null);
 
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
   const [showForceArrows, setShowForceArrows] = useState(true);
-
-  const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
 
   const generateForces = (nForces: number) => {
     let forcest = Array<number>(nForces).fill(0);
@@ -103,6 +90,11 @@ export default function TrussForm() {
     );
   };
 
+  const resetForces = useCallback(() => {
+    setForceArrows(generateForceArrows(nNodes));
+    setForces(generateForces(nNodes));
+  }, [nNodes]);
+
   const updateForceArrows = (nodeId: string, fx?: number, fy?: number) => {
     setForceArrows((oldForceArrows) => {
       let newForce = oldForceArrows[nodeId];
@@ -121,6 +113,33 @@ export default function TrussForm() {
 
   const [showMemberForces, setShowMemberForces] = useState(false);
   const [memberForces, setMemberForces] = useState(emptyApiForcesParsed);
+
+  const updateMemberForces = useCallback(() => {
+    // Flip y-axis direction
+    const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
+    FetchForces(span, height, nWeb, forcesCorrected).then((result) => {
+      // Get spread of forces for color calculations
+      let max = result.data.memberForces[0][3];
+      let min = result.data.memberForces[0][3];
+      result.data.memberForces.forEach((force) => {
+        max = Math.max(max, force[3]);
+        min = Math.min(min, force[3]);
+      });
+
+      // Set colors based on forces
+      result.data.memberForces.forEach((force) => {
+        const member = geometry?.members[force[0].toString()];
+        if (member) {
+          member.color = dataToColorScale(force[3], max, min);
+        }
+      });
+
+      setMemberForcesSummary({ max: max, min: min });
+      setShowForces(!result.show);
+      setShowMemberForces(result.show);
+      setMemberForces(result.data);
+    });
+  }, [span, height, nWeb, forces, geometry?.members]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -165,11 +184,6 @@ export default function TrussForm() {
     setShowForceArrows(event?.target?.checked);
   };
 
-  const resetForces = useCallback(() => {
-    setForceArrows(generateForceArrows(nNodes));
-    setForces(generateForces(nNodes));
-  }, [nNodes]);
-
   useEffect(() => {
     resetForces();
   }, [nWeb, nNodes, resetForces]);
@@ -181,33 +195,6 @@ export default function TrussForm() {
       setGeometry(result.data);
     });
   }, [span, height, nWeb]);
-
-  const updateMemberForces = useCallback(() => {
-    // Flip y-axis direction
-    const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
-    FetchForces(span, height, nWeb, forcesCorrected).then((result) => {
-      // Get spread of forces for color calculations
-      let max = result.data.memberForces[0][3];
-      let min = result.data.memberForces[0][3];
-      result.data.memberForces.forEach((force) => {
-        max = Math.max(max, force[3]);
-        min = Math.min(min, force[3]);
-      });
-
-      // Set colors based on forces
-      result.data.memberForces.forEach((force) => {
-        const member = geometry?.members[force[0].toString()];
-        if (member) {
-          member.color = dataToColorScale(force[3], max, min);
-        }
-      });
-
-      setMemberForcesSummary({ max: max, min: min });
-      setShowForces(!result.show);
-      setShowMemberForces(result.show);
-      setMemberForces(result.data);
-    });
-  }, [span, height, nWeb, forces, geometry?.members]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {

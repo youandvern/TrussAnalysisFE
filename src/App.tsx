@@ -18,9 +18,6 @@ function App() {
     },
   });
 
-  const [showResult, setShowResult] = useState(false);
-  const [getResults, setResults] = useState<ApiGeometry>();
-
   return (
     <Container maxWidth="md">
       <ThemeProvider theme={theme}>

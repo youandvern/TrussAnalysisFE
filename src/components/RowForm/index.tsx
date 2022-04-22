@@ -3,7 +3,6 @@ import "./style.css";
 import { Grid, Button } from "@mui/material/";
 import NumInput from "../NumInput";
 
-// expected properties given to NumSlider
 interface RowFormProps {
   formRef?: React.MutableRefObject<null>;
   onSubmit?: React.MouseEventHandler<HTMLButtonElement>;
@@ -14,7 +13,7 @@ interface RowFormProps {
   inputUnit2?: string;
 }
 
-// typical slider for discrete number inputs for concrete beam design form
+// Single row form with submit button and two inputs evenly spaced full width
 export default function RowForm({
   formRef,
   onSubmit,
