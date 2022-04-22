@@ -251,7 +251,7 @@ export default function TrussGraph({
               {node.fixity === "pin" && pinMarker(node.x, node.y - nodeSize / 2, nodeSize)}
               {node.fixity === "roller" && rollerMarker(node.x, node.y - nodeSize, nodeSize)}
               {thisNodeForce &&
-                forceArrows(node.x, -node.y, thisNodeForce.fx, -thisNodeForce.fy, 4 * nodeSize)}
+                forceArrows(node.x, -node.y, thisNodeForce.fx, thisNodeForce.fy, 4 * nodeSize)}
               <Circle x={node.x} y={-node.y} fill="black" radius={nodeSize} key={"node-" + iNode} />
               {showNodeLabels && nodeLabel(node.x, -1 * node.y, iNode, nodeSize)}
             </>

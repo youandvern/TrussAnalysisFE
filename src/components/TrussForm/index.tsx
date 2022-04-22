@@ -32,6 +32,8 @@ import { FormatAlignCenterTwoTone } from "@mui/icons-material";
 import { FetchForces } from "../FetchForces";
 import MemberForceResults from "../MemberForceResults";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
+import RowForm from "../RowForm";
+import LabeledSwitch from "../LabeledSwitch";
 
 // expected properties to draw beam section
 // interface FormProps {
@@ -76,6 +78,7 @@ export default function TrussForm() {
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
   const [forceArrows, setForceArrows] = useState(generateForceArrows(nNodes));
   const setTopForcesForm = useRef(null);
+  const setBotForcesForm = useRef(null);
 
   const updateForces = (
     row: number,
@@ -127,8 +130,8 @@ export default function TrussForm() {
     setHeight(+event?.target?.value);
   };
 
-  const handleSetNodeForces = (nodeIds?: number[]) => {
-    const form = setTopForcesForm.current;
+  const handleSetNodeForces = (nodeIds?: number[], formRef?: React.MutableRefObject<null>) => {
+    const form = formRef ? formRef.current : null;
     if (nodeIds && form) {
       const fx = +form["Fx"]["value"] || 0;
       const fy = +form["Fy"]["value"] || 0;
@@ -162,10 +165,14 @@ export default function TrussForm() {
     setShowForceArrows(event?.target?.checked);
   };
 
-  useEffect(() => {
+  const resetForces = useCallback(() => {
     setForceArrows(generateForceArrows(nNodes));
     setForces(generateForces(nNodes));
-  }, [nWeb, nNodes]);
+  }, [nNodes]);
+
+  useEffect(() => {
+    resetForces();
+  }, [nWeb, nNodes, resetForces]);
 
   useEffect(() => {
     FetchGeometry(span, height, nWeb).then((result) => {
@@ -229,22 +236,25 @@ export default function TrussForm() {
   return (
     <Grid container className="small-margins" spacing={3}>
       <Grid item xs={3} spacing={0} ref={graphGridRef}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Node Labels:
-          <Switch checked={showNodeLabels} onChange={handleShowNodeLabels} />
-        </Typography>
+        <LabeledSwitch
+          label="Node Labels:"
+          checked={showNodeLabels}
+          handleChange={handleShowNodeLabels}
+        />
       </Grid>
       <Grid item xs={3} spacing={0} ref={graphGridRef}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Member Labels:
-          <Switch checked={showMemberLabels} onChange={handleShowMemberLabels} />
-        </Typography>
+        <LabeledSwitch
+          label="Member Labels:"
+          checked={showMemberLabels}
+          handleChange={handleShowMemberLabels}
+        />
       </Grid>
       <Grid item xs={3} spacing={0} ref={graphGridRef}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Force Arrows:
-          <Switch checked={showForceArrows} onChange={handleShowForceArrows} />
-        </Typography>
+        <LabeledSwitch
+          label="Force Arrows:"
+          checked={showForceArrows}
+          handleChange={handleShowForceArrows}
+        />
       </Grid>
       <Grid item xs={12} spacing={0} ref={graphGridRef}>
         {geometry && (
@@ -313,42 +323,39 @@ export default function TrussForm() {
                 <Typography>Truss Loading</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <form ref={setTopForcesForm}>
-                  <Grid
-                    container
-                    spacing={1}
-                    sx={{
-                      borderBottom: 1,
-                      paddingBottom: "0.5em",
-                      marginBottom: "0.5em",
-                      borderColor: "grey.600",
-                    }}
-                  >
-                    <Grid item xs={4}>
-                      <Button
-                        variant="outlined"
-                        fullWidth
-                        color="primary"
-                        onClick={() => handleSetNodeForces(geometry?.topNodeIds)}
-                        sx={{ height: "100%" }}
-                      >
-                        All Top Nodes:
-                      </Button>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <NumInput label="Fx" unit="kips" />
-                    </Grid>
-                    <Grid item xs={4}>
-                      <NumInput label="Fy" unit="kips" />
-                    </Grid>
-                  </Grid>
-                </form>
+                <RowForm
+                  formRef={setTopForcesForm}
+                  onSubmit={() => handleSetNodeForces(geometry?.topNodeIds, setTopForcesForm)}
+                  buttonTitle="Top Nodes:"
+                  inputLabel1="Fx"
+                  inputUnit1="kips"
+                  inputLabel2="Fy"
+                  inputUnit2="kips"
+                />
+                <RowForm
+                  formRef={setBotForcesForm}
+                  onSubmit={() => handleSetNodeForces(geometry?.botNodeIds, setBotForcesForm)}
+                  buttonTitle="Bottom Nodes:"
+                  inputLabel1="Fx"
+                  inputUnit1="kips"
+                  inputLabel2="Fy"
+                  inputUnit2="kips"
+                />
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  color="primary"
+                  onClick={resetForces}
+                  sx={{ height: "100%", marginBottom: "2em" }}
+                >
+                  Reset Forces to Zero
+                </Button>
                 <DataTable
                   headerList={["Node", "Fx (kips)", "Fy (kips)"]}
                   dataList={forces}
                   setDataList={updateForces}
                   firstColumnEditable={false}
-                  title="Node Forces"
+                  title="Individual Node Forces"
                 />
               </AccordionDetails>
             </Accordion>
