@@ -31,7 +31,7 @@ export const FetchForces = (
     let show = false;
     let data = emptyApiForcesParsed;
 
-    const res = await fetch("http://127.0.0.1:5000/api/TrussForces", {
+    const res = await fetch("https://encompapp.com/api/TrussForces", {
       method: "POST",
       cache: "no-cache",
       headers: {

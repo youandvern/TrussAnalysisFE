@@ -14,8 +14,8 @@ export default function IntroText() {
 
           <Typography>
             Welcome to the truss analysis tool! This is a simple, fast, and powerful tool for
-            calculating the axial load demands for common truss styles. Please explore the tool and
-            our open source calculation building application,{" "}
+            calculating the axial load demands for common truss styles including Pratt, Howe, and
+            Warren Trusses. Please explore the tool and our other design software at:{" "}
             <a href="https://encompapp.com/">Encomp</a>. <br />
             <br />
             If you liked this tool or want to see new features added, please leave us a message at{" "}
