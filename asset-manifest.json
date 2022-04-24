@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.3a5a4eed.css",
+    "main.js": "/static/js/main.bbe2d5c7.js",
+    "static/js/787.db4bb182.chunk.js": "/static/js/787.db4bb182.chunk.js",
+    "static/media/ENCOMP.png": "/static/media/ENCOMP.28f93b14e5d18f379c19.png",
+    "index.html": "/index.html",
+    "main.3a5a4eed.css.map": "/static/css/main.3a5a4eed.css.map",
+    "main.bbe2d5c7.js.map": "/static/js/main.bbe2d5c7.js.map",
+    "787.db4bb182.chunk.js.map": "/static/js/787.db4bb182.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3a5a4eed.css",
+    "static/js/main.bbe2d5c7.js"
+  ]
+}
