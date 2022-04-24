@@ -14,14 +14,14 @@ export const FetchForces = (
   height: number,
   nWeb: number,
   forces: number[][],
-  type?: string
+  trussType?: string
 ): Promise<FetchForcesObject> => {
   const request_dict = {
     span: span,
     height: height,
     nWeb: nWeb,
     forces: forces,
-    type: type,
+    trussType: trussType,
   } as ApiGeometryGlobal;
 
   // https://encompapp.com/

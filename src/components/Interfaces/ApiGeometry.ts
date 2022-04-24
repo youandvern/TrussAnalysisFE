@@ -30,4 +30,5 @@ export interface ApiGeometryGlobal {
   span: number;
   height: number;
   nWeb: number;
+  trussType?: string;
 }

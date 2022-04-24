@@ -71,7 +71,8 @@ export default function TrussGraph({
   const forceScale = (xp: number, yp: number, length: number, min: number, max: number) => {
     const width = length / 15;
     const fontSize = 1.25 * width;
-    const mid = (max + min) / 2;
+    let mid = (max + min) / 2;
+    mid = Math.abs(mid) < 0.01 && Math.abs(mid) < Math.abs(max) / 100 ? 0 : mid;
     return (
       <>
         <Rect

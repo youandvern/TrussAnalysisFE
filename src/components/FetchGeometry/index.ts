@@ -12,13 +12,13 @@ export const FetchGeometry = (
   span: number,
   height: number,
   nWeb: number,
-  type?: string
+  trussType?: string
 ): Promise<FetchObject> => {
   const request_dict = {
     span: span,
     height: height,
     nWeb: nWeb,
-    type: type,
+    trussType: trussType,
   } as ApiGeometryGlobal;
 
   // https://encompapp.com/

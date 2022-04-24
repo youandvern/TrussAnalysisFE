@@ -29,12 +29,14 @@ import MemberForceResults from "../MemberForceResults";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
 import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
+import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 
-// Beam shape in input form for beam capacity calculation
+// Form and controls for truss analysis tool
 export default function TrussForm() {
   const [span, setSpan] = useState(16);
   const [height, setHeight] = useState(4);
   const [nWeb, setNWeb] = useState(1);
+  const [trussType, setTrussType] = useState(TRUSS_TYPES[0].type);
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
 
@@ -117,7 +119,7 @@ export default function TrussForm() {
   const updateMemberForces = useCallback(() => {
     // Flip y-axis direction
     const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
-    FetchForces(span, height, nWeb, forcesCorrected).then((result) => {
+    FetchForces(span, height, nWeb, forcesCorrected, trussType).then((result) => {
       // Get spread of forces for color calculations
       let max = result.data.memberForces[0][3];
       let min = result.data.memberForces[0][3];
@@ -139,7 +141,7 @@ export default function TrussForm() {
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
-  }, [span, height, nWeb, forces, geometry?.members]);
+  }, [span, height, nWeb, forces, geometry?.members, trussType]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -172,6 +174,10 @@ export default function TrussForm() {
     }
   };
 
+  const handleChangeTrussType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTrussType(event?.target?.value);
+  };
+
   const handleShowNodeLabels = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShowNodeLabels(event?.target?.checked);
   };
@@ -189,12 +195,12 @@ export default function TrussForm() {
   }, [nWeb, nNodes, resetForces]);
 
   useEffect(() => {
-    FetchGeometry(span, height, nWeb).then((result) => {
+    FetchGeometry(span, height, nWeb, trussType).then((result) => {
       // setShowResult(result.show); // for forces results
       // const r = setResults ? setResults(result.data) : null; // for forces results
       setGeometry(result.data);
     });
-  }, [span, height, nWeb]);
+  }, [span, height, nWeb, trussType]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
@@ -218,10 +224,13 @@ export default function TrussForm() {
   useEffect(() => {
     setShowMemberForces(false);
     setMemberForcesSummary(undefined);
-  }, [span, height, nWeb, forces]);
+  }, [span, height, nWeb, forces, trussType]);
 
   return (
-    <Grid container className="small-margins" spacing={3}>
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <TrussStyleSelector trussType={trussType} handleChange={handleChangeTrussType} />
+      </Grid>
       <Grid item xs={3} spacing={0} ref={graphGridRef}>
         <LabeledSwitch
           label="Node Labels:"
