@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Box,
   FormControl,
   FormLabel,
   RadioGroup,
@@ -46,12 +45,17 @@ export default function TrussStyleSelector({ trussType, handleChange }: StyleSel
     <FormControl
       sx={{
         width: "100%",
-        borderColor: grey[400],
-        border: 1,
+        color: grey[400],
+        border: 2,
         borderRadius: 3,
+        padding: " 0.5em",
+        "& .MuiFormGroup-root": {
+          color: "black",
+        },
       }}
+      className="outlined-form-control"
     >
-      <FormLabel id="choose-truss-style-buttons" sx={{ marginLeft: "1em" }}>
+      <FormLabel id="choose-truss-style-buttons" sx={{ marginLeft: "1em", fontWeight: "bold" }}>
         Choose Truss Style:
       </FormLabel>
       <RadioGroup

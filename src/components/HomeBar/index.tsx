@@ -25,7 +25,7 @@ export default function HomeBar() {
           <Grid item container direction="column-reverse" xs={8}>
             <Typography align="center">
               <Link href="https://encompapp.com/">
-                <HomeIcon fontSize="large" color="primary" />
+                <HomeIcon fontSize="large" color="primary" titleAccess="Home Button" />
               </Link>
             </Typography>
           </Grid>

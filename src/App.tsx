@@ -1,10 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import "./App.css?v=1";
 import { createTheme, ThemeProvider, Container } from "@mui/material";
 import TrussForm from "./components/TrussForm";
-import ApiGeometry from "./components/Interfaces/ApiGeometry";
-import HomeBar from "./components/HomeBar";
-import IntroText from "./components/IntroText";
 
 function App() {
   const theme = createTheme({
@@ -21,8 +18,6 @@ function App() {
   return (
     <Container maxWidth="md">
       <ThemeProvider theme={theme}>
-        <HomeBar />
-        <IntroText />
         <TrussForm />
       </ThemeProvider>
     </Container>

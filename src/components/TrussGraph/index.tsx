@@ -46,6 +46,7 @@ export default function TrussGraph({
       <>
         {fx !== 0 && (
           <Arrow
+            key={`fAx-${xp},${yp}`}
             points={[xp, yp, xp + xdir * aSize, yp]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -56,6 +57,7 @@ export default function TrussGraph({
         )}
         {fy !== 0 && (
           <Arrow
+            key={`fAy-${xp},${yp}`}
             points={[xp, yp, xp, yp + ydir * aSize]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -146,12 +148,14 @@ export default function TrussGraph({
     return (
       <>
         <Line
+          key={`pin1-${xp},${yp}`}
           points={[xp - 3 * pSize, -1 * yp + 3 * pSize, xp + 3 * pSize, -1 * yp + 3 * pSize]}
           stroke="orange"
           strokeWidth={pSize}
           fillAfterStrokeEnabled
         />
         <Line
+          key={`pin2-${xp},${yp}`}
           points={[
             xp - pLength * pSize,
             -1 * yp + pHeight * pLength * pSize,
@@ -172,12 +176,14 @@ export default function TrussGraph({
     return (
       <>
         <Line
+          key={`roll1-${xp},${yp}`}
           points={[xp - 3 * rSize, -1 * yp + 3 * rSize, xp + 3 * rSize, -1 * yp + 3 * rSize]}
           stroke="orange"
           strokeWidth={rSize}
           fillAfterStrokeEnabled
         />
         <Circle
+          key={`roll2-${xp},${yp}`}
           x={xp}
           y={-1 * yp + rSize}
           radius={rSize * 1.25}
@@ -196,6 +202,7 @@ export default function TrussGraph({
         y={y - yOffset}
         text={i}
         fontSize={offSet * 3}
+        key={`nLabel-${x},${y}`}
       />
     );
   };
@@ -204,9 +211,9 @@ export default function TrussGraph({
     const x = (x1 + x2) / 2;
     const y = (y1 + y2) / 2;
     return (
-      <Label x={x - 0.75 * size * i.length} y={y - size} opacity={1.0}>
-        <Tag fill="white" cornerRadius={size} />
-        <Text text={i} fontSize={size * 2} fill="blue" padding={size / 4} />
+      <Label x={x - 0.75 * size * i.length} y={y - size} opacity={1.0} key={`mLabel-${i}`}>
+        <Tag fill="white" cornerRadius={size} key={`mLabelg-${i}`} />
+        <Text text={i} fontSize={size * 2} fill="blue" padding={size / 4} key={`mLabelx-${i}`} />
       </Label>
     );
   };

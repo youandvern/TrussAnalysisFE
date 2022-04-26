@@ -231,28 +231,28 @@ export default function TrussForm() {
       <Grid item xs={12}>
         <TrussStyleSelector trussType={trussType} handleChange={handleChangeTrussType} />
       </Grid>
-      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+      <Grid item xs={3} ref={graphGridRef}>
         <LabeledSwitch
           label="Node Labels:"
           checked={showNodeLabels}
           handleChange={handleShowNodeLabels}
         />
       </Grid>
-      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+      <Grid item xs={3} ref={graphGridRef}>
         <LabeledSwitch
           label="Member Labels:"
           checked={showMemberLabels}
           handleChange={handleShowMemberLabels}
         />
       </Grid>
-      <Grid item xs={3} spacing={0} ref={graphGridRef}>
+      <Grid item xs={3} ref={graphGridRef}>
         <LabeledSwitch
           label="Force Arrows:"
           checked={showForceArrows}
           handleChange={handleShowForceArrows}
         />
       </Grid>
-      <Grid item xs={12} spacing={0} ref={graphGridRef}>
+      <Grid item xs={12} ref={graphGridRef}>
         {geometry && (
           <TrussGraph
             globalGeometry={{ span, height, nWeb } as ApiGeometryGlobal}
