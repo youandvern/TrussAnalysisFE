@@ -43,7 +43,20 @@ export default function NumSlider({
       </Grid>
 
       <Grid item xs={2}>
-        <TextField disabled fullWidth value={value} margin="normal" />
+        <Typography
+          align="left"
+          color="textSecondary"
+          sx={{
+            marginBlock: 0,
+            marginBlockEnd: 0,
+            width: "fit-content",
+            border: "1px solid",
+            borderRadius: 2,
+            padding: "0.5em",
+          }}
+        >
+          {value}
+        </Typography>
       </Grid>
     </Grid>
   );
