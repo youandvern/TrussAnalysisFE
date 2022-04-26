@@ -1,6 +1,6 @@
 import React from "react";
 import "./style.css";
-import { Grid, Typography, Slider, TextField } from "@mui/material/";
+import { Grid, Typography, Slider } from "@mui/material/";
 
 // expected properties given to NumSlider
 interface SlideProps {
