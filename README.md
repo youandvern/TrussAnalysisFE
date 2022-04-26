@@ -2,7 +2,7 @@
 
 <!-- Shields not necessary now. Can be used later on. -->
 
-<!-- 
+<!--
 
 <p align="center">
 <img src="https://img.shields.io/github/contributors/youandvern/TrussAnalysisFE?style=for-the-badge" alt="Contributors">
@@ -13,18 +13,19 @@
 
 
  -->
- 
- 
+
 <p align="center">
 <img src="https://img.shields.io/badge/python-3.6-brightgreen?style=for-the-badge" alt="Compatibility">
 <img src="https://img.shields.io/github/license/youandvern/TrussAnalysisFE?style=for-the-badge" alt="License">
-<img src="https://img.shields.io/badge/-LinkedIn-black?style=for-the-badge&logo=linkedin&colorB=555" alt="Contact">
+<a href="https://www.linkedin.com/in/andrew-v-young/">
+  <img src="https://img.shields.io/badge/-LinkedIn-black?style=for-the-badge&logo=linkedin&colorB=555" alt="Contact">
+</a>
 </p>
-
 
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
+<img src="/src/components/HomeBar/ENCOMP.png" alt="Encomp Logo>
 
 <h3 align="center">TrussAnalysisFE</h3>
 
@@ -38,8 +39,6 @@
     <a href="https://github.com/youandvern/TrussAnalysisFE/issues">Request Feature</a>
   </p>
 </div>
-
-
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -67,34 +66,37 @@
   </ol>
 </details>
 
-
-
 <!-- ABOUT THE PROJECT -->
+
 ## About The Project
-This library was built to simplify and automate truss design for the most common truss configurations. It generates node and member geometry for a number of truss styles given very simple inputs. It also provides simple methods to generate and populate a force matrix for structural analysis via the Direct Stiffness Method. The generated geometry is transformed into a [StructPy](https://github.com/BrianChevalier/StructPy/) truss analysis object in order to perform the analysis.
+
+This application was built to simplify and automate truss design for the most common truss configurations. With a few simple inputs and streamlined user experience, it quickly generates node and member geometry for the selected truss style. There are also multiple ways to apply loads to the structure for calculating the axial member demands. Results are displayed both graphically and in a data table for easy transfer to member design.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
-
 
 ### Built With
 
-* [StructPy](https://github.com/BrianChevalier/StructPy/)
-* [StructPy - revised](https://github.com/youandvern/StructPy)
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
+- [Konva](https://konvajs.org/)
+- [MUI](https://mui.com/)
+- [React.js](https://reactjs.org/)
+- [TrussAnalysis](https://github.com/youandvern/TrussAnalysis)
+- [Encomp](https://github.com/youandvern/encomp)
+- [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
-
 <!-- GETTING STARTED -->
+
 ## Getting Started
 
 To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-* Install python 3.6 or later along with pip.
+- npm
+  ```sh
+  npm install npm@latest -g
+  ```
 
 ### Installation
 
@@ -104,24 +106,25 @@ To get a local copy up and running follow these simple example steps.
    ```
 2. Install required packages
    ```sh
-   pip install -r /path/to/requirements.txt
+   npm install
+   ```
+3. Start your development server
+   ```sh
+   npm run start
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
-
 <!-- USAGE EXAMPLES -->
-## Usage
 
-For examples, please reference [Main.py](Main.py) or [Test Examples](/Testing).
+## Usage
 
 To see this package in action, check out the [Truss Analysis Tool](https://truss-analysis.encompapp.com/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
 <!-- CONTRIBUTING -->
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -137,18 +140,16 @@ Don't forget to give the project a star! Thanks again!
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
-
 <!-- LICENSE -->
+
 ## License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
-
 <!-- CONTACT -->
+
 ## Contact
 
 Andrew Young - youandvern@gmail.com
@@ -156,4 +157,3 @@ Andrew Young - youandvern@gmail.com
 Project Link: [https://github.com/youandvern/TrussAnalysisFE](https://github.com/youandvern/TrussAnalysisFE)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
