@@ -15,8 +15,7 @@
  -->
 
 <p align="center">
-<img src="https://img.shields.io/badge/python-3.6-brightgreen?style=for-the-badge" alt="Compatibility">
-<img src="https://img.shields.io/github/license/youandvern/TrussAnalysisFE?style=for-the-badge" alt="License">
+<img alt="License" src="https://img.shields.io/github/license/youandvern/TrussAnalysisFE?style=for-the-badge">
 <a href="https://www.linkedin.com/in/andrew-v-young/">
   <img src="https://img.shields.io/badge/-LinkedIn-black?style=for-the-badge&logo=linkedin&colorB=555" alt="Contact">
 </a>
@@ -25,7 +24,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<img src="/src/components/HomeBar/ENCOMP.png" alt="Encomp Logo>
+<img src="/src/components/HomeBar/ENCOMP.png" alt="Encomp Logo">
 
 <h3 align="center">TrussAnalysisFE</h3>
 
