@@ -1,3 +1,42 @@
 .calc-report-container .MuiTypography-caption {
   margin-bottom: 2em;
 }
+
+.gen-member-group {
+  display: flex;
+}
+
+.gen-member-pic {
+  width: 50%;
+  border-style: solid;
+}
+
+.gen-member-pic img {
+  width: 100%;
+}
+
+.gen-member-notes {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 2.5em;
+}
+
+.gen-member-note {
+  display: flex;
+  align-items: center;
+  margin: 0.25em;
+}
+
+.symbol-pic {
+  width: 2em;
+}
+
+.equation-div {
+  text-align: center;
+  font-style: italic;
+}
+
+.equation-div p {
+  margin: 0;
+}
