@@ -1,0 +1,9 @@
+.print-only-calc-report {
+  display: block;
+}
+
+@media print {
+  .print-only-calc-report {
+    display: block;
+  }
+}

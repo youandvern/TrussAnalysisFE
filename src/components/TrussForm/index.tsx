@@ -30,6 +30,21 @@ import { dataToColorScale } from "../Utilities/DataToColorscale";
 import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
+import CalculationReport from "../CalculationReport";
+
+const printPdf = () => {
+  document.querySelector(".print-only-calc-report")?.classList.add("print-only");
+  document
+    .querySelectorAll(".not-calc-report")
+    .forEach((element) => element?.classList.add("no-print"));
+  window.print();
+  setTimeout(() => {
+    document.querySelector("#print-only-calc-report")?.classList.remove("print-only");
+    document
+      .querySelectorAll(".not-calc-report")
+      .forEach((element) => element?.classList.remove("no-print"));
+  }, 1000);
+};
 
 // Form and controls for truss analysis tool
 export default function TrussForm() {
@@ -227,145 +242,176 @@ export default function TrussForm() {
   }, [span, height, nWeb, forces, trussType]);
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <TrussStyleSelector trussType={trussType} handleChange={handleChangeTrussType} />
-      </Grid>
-      <Grid item xs={3} ref={graphGridRef}>
-        <LabeledSwitch
-          label="Node Labels:"
-          checked={showNodeLabels}
-          handleChange={handleShowNodeLabels}
-        />
-      </Grid>
-      <Grid item xs={3} ref={graphGridRef}>
-        <LabeledSwitch
-          label="Member Labels:"
-          checked={showMemberLabels}
-          handleChange={handleShowMemberLabels}
-        />
-      </Grid>
-      <Grid item xs={3} ref={graphGridRef}>
-        <LabeledSwitch
-          label="Force Arrows:"
-          checked={showForceArrows}
-          handleChange={handleShowForceArrows}
-        />
-      </Grid>
-      <Grid item xs={12} ref={graphGridRef}>
-        {geometry && (
-          <TrussGraph
-            globalGeometry={{ span, height, nWeb } as ApiGeometryGlobal}
-            trussGeometry={geometry}
-            frameWidth={frameWidth}
-            frameHeight={frameHeight}
-            showNodeLabels={showNodeLabels}
-            showMemberLabels={showMemberLabels}
-            showForceArrows={showForceArrows}
-            memberForcesSummary={memberForcesSummary}
-            nodeForces={forceArrows}
-          />
-        )}
-      </Grid>
-      <Grid item xs={12}>
-        <Grid container spacing={2}>
-          <Grid item xs={3}>
-            <NumInput
-              label="Truss Span"
-              value={span}
-              onChange={handleSetSpan}
-              unit="ft"
-              min={1}
-              max={500}
-              step={1}
+    <>
+      <div className="not-calc-report">
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <TrussStyleSelector trussType={trussType} handleChange={handleChangeTrussType} />
+          </Grid>
+          <Grid item xs={3} ref={graphGridRef}>
+            <LabeledSwitch
+              label="Node Labels:"
+              checked={showNodeLabels}
+              handleChange={handleShowNodeLabels}
             />
           </Grid>
-
-          <Grid item xs={3}>
-            <NumInput
-              label="Truss Height"
-              value={height}
-              onChange={handleSetHeight}
-              unit="ft"
-              min={1}
-              max={200}
-              step={1}
+          <Grid item xs={3} ref={graphGridRef}>
+            <LabeledSwitch
+              label="Member Labels:"
+              checked={showMemberLabels}
+              handleChange={handleShowMemberLabels}
             />
           </Grid>
-
-          <Grid item xs={6}>
-            <NumSlider
-              label="Number of Web Bays (per side):"
-              value={nWeb}
-              onChange={setNWeb}
-              min={1}
-              max={10}
-              step={1}
+          <Grid item xs={3} ref={graphGridRef}>
+            <LabeledSwitch
+              label="Force Arrows:"
+              checked={showForceArrows}
+              handleChange={handleShowForceArrows}
             />
           </Grid>
-
-          <Grid item xs={8}>
-            <Accordion
-              expanded={showForces}
-              onChange={(e, expanded) => {
-                setShowForces(expanded);
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1a-content"
-                id="panel1a-header"
-              >
-                <Typography>Truss Loading</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <RowForm
-                  formRef={setTopForcesForm}
-                  onSubmit={() => handleSetNodeForces(geometry?.topNodeIds, setTopForcesForm)}
-                  buttonTitle="Top Nodes:"
-                  inputLabel1="Fx"
-                  inputUnit1="kips"
-                  inputLabel2="Fy"
-                  inputUnit2="kips"
-                />
-                <RowForm
-                  formRef={setBotForcesForm}
-                  onSubmit={() => handleSetNodeForces(geometry?.botNodeIds, setBotForcesForm)}
-                  buttonTitle="Bottom Nodes:"
-                  inputLabel1="Fx"
-                  inputUnit1="kips"
-                  inputLabel2="Fy"
-                  inputUnit2="kips"
-                />
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  color="primary"
-                  onClick={resetForces}
-                  sx={{ height: "100%", marginBottom: "2em" }}
-                >
-                  Reset Forces to Zero
-                </Button>
-                <DataTable
-                  headerList={["Node", "Fx (kips)", "Fy (kips)"]}
-                  dataList={forces}
-                  setDataList={updateForces}
-                  firstColumnEditable={false}
-                  title="Individual Node Forces"
-                />
-              </AccordionDetails>
-            </Accordion>
-          </Grid>
-          <Grid item xs={4}>
-            <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
-              Calculate Forces
-            </Button>
+          <Grid item xs={12} ref={graphGridRef}>
+            {geometry && (
+              <TrussGraph
+                globalGeometry={{ span, height, nWeb } as ApiGeometryGlobal}
+                trussGeometry={geometry}
+                frameWidth={frameWidth}
+                frameHeight={frameHeight}
+                showNodeLabels={showNodeLabels}
+                showMemberLabels={showMemberLabels}
+                showForceArrows={showForceArrows}
+                showAxes={true}
+                memberForcesSummary={memberForcesSummary}
+                nodeForces={forceArrows}
+              />
+            )}
           </Grid>
           <Grid item xs={12}>
-            <MemberForceResults showResult={showMemberForces} memberForceResults={memberForces} />
+            <Grid container spacing={2}>
+              <Grid item xs={3}>
+                <NumInput
+                  label="Truss Span"
+                  value={span}
+                  onChange={handleSetSpan}
+                  unit="ft"
+                  min={1}
+                  max={500}
+                  step={1}
+                />
+              </Grid>
+
+              <Grid item xs={3}>
+                <NumInput
+                  label="Truss Height"
+                  value={height}
+                  onChange={handleSetHeight}
+                  unit="ft"
+                  min={1}
+                  max={200}
+                  step={1}
+                />
+              </Grid>
+
+              <Grid item xs={6}>
+                <NumSlider
+                  label="Number of Web Bays (per side):"
+                  value={nWeb}
+                  onChange={setNWeb}
+                  min={1}
+                  max={10}
+                  step={1}
+                />
+              </Grid>
+
+              <Grid item xs={8}>
+                <Accordion
+                  expanded={showForces}
+                  onChange={(e, expanded) => {
+                    setShowForces(expanded);
+                  }}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1a-content"
+                    id="panel1a-header"
+                  >
+                    <Typography>Truss Loading</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <RowForm
+                      formRef={setTopForcesForm}
+                      onSubmit={() => handleSetNodeForces(geometry?.topNodeIds, setTopForcesForm)}
+                      buttonTitle="Top Nodes:"
+                      inputLabel1="Fx"
+                      inputUnit1="kips"
+                      inputLabel2="Fy"
+                      inputUnit2="kips"
+                    />
+                    <RowForm
+                      formRef={setBotForcesForm}
+                      onSubmit={() => handleSetNodeForces(geometry?.botNodeIds, setBotForcesForm)}
+                      buttonTitle="Bottom Nodes:"
+                      inputLabel1="Fx"
+                      inputUnit1="kips"
+                      inputLabel2="Fy"
+                      inputUnit2="kips"
+                    />
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      color="primary"
+                      onClick={resetForces}
+                      sx={{ height: "100%", marginBottom: "2em" }}
+                    >
+                      Reset Forces to Zero
+                    </Button>
+                    <DataTable
+                      headerList={["Node", "Fx (kips)", "Fy (kips)"]}
+                      dataList={forces}
+                      setDataList={updateForces}
+                      firstColumnEditable={false}
+                      title="Individual Node Forces"
+                    />
+                  </AccordionDetails>
+                </Accordion>
+              </Grid>
+              <Grid item xs={4}>
+                <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
+                  Calculate Forces
+                </Button>
+              </Grid>
+              <Grid item xs={12}>
+                <MemberForceResults
+                  showResult={showMemberForces}
+                  memberForceResults={memberForces}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button variant="outlined" fullWidth color="primary" onClick={printPdf}>
+                  Get PDF
+                </Button>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
-    </Grid>
+      </div>
+      <div id="print-only-calc-report" className="print-only-calc-report">
+        {(geometry || false) && (
+          <CalculationReport
+            geometryProps={{
+              globalGeometry: { span, height, nWeb } as ApiGeometryGlobal,
+              trussGeometry: geometry,
+              frameWidth: frameWidth,
+              frameHeight: frameHeight,
+              showNodeLabels: showNodeLabels,
+              showMemberLabels: showMemberLabels,
+              showForceArrows: showForceArrows,
+              memberForcesSummary: memberForcesSummary,
+              nodeForces: forceArrows,
+            }}
+            memberForces={memberForces}
+          />
+        )}
+      </div>
+    </>
   );
 }

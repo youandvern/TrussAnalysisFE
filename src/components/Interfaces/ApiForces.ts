@@ -6,11 +6,25 @@ export default interface ApiForces {
   members: Members;
   memberForces: number[][];
   memberForcesHeaders: string[];
+  displacements: number[];
+  member0StiffnessMatrix: number[][];
+  structureStiffnessMatrix: number[][];
+  structureReducedStiffnessMatrix: number[][];
+  reducedForceMatrix: number[];
+  globalE: number;
+  globalA: number;
 }
 
 export interface ApiForcesParsed {
   memberForces: [number, JSX.Element, number, number][];
   memberForcesHeaders: string[];
+  displacements: number[];
+  member0StiffnessMatrix: number[][];
+  structureStiffnessMatrix: number[][];
+  structureReducedStiffnessMatrix: number[][];
+  reducedForceMatrix: number[];
+  globalE: number;
+  globalA: number;
 }
 
 export interface NodeForceControlled {
@@ -43,9 +57,26 @@ export const emptyApiForces = {
   members: { 1: { start: 2, end: 1, type: "chord" } },
   memberForces: [[0, 0, 1, 0]],
   memberForcesHeaders: ["Member ID", "Start Node", "End Node", "Length", "Axial Force"],
+  displacements: [0, 0, 0, 0],
+  member0StiffnessMatrix: [
+    [0, 0],
+    [0, 0],
+  ],
+  structureStiffnessMatrix: [
+    [0, 0],
+    [0, 0],
+  ],
+  structureReducedStiffnessMatrix: [
+    [0, 0],
+    [0, 0],
+  ],
+  reducedForceMatrix: [0, 0, 0, 0],
+  globalE: 1,
+  globalA: 1,
 } as ApiForces;
 
 export const emptyApiForcesParsed = {
+  ...emptyApiForces,
   memberForces: [[0, memberNodesFormatter(0, 1), 1, 0]],
   memberForcesHeaders: ["Member ID", "Start -> End Node", "Length (ft)", "Axial Force (kips)"],
 } as ApiForcesParsed;

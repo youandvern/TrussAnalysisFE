@@ -31,7 +31,7 @@ export const FetchForces = (
     let show = false;
     let data = emptyApiForcesParsed;
 
-    const res = await fetch("https://encompapp.com/api/TrussForces", {
+    const res = await fetch("http://127.0.0.1:5000/api/TrussForces", {
       method: "POST",
       cache: "no-cache",
       headers: {
@@ -42,8 +42,6 @@ export const FetchForces = (
     });
 
     const unparsed_data = (await res.json()) as ApiForces;
-    console.log("unparsed data");
-    console.log(unparsed_data);
 
     if (unparsed_data.nodes && unparsed_data.members && unparsed_data.memberForces) {
       data = {
@@ -59,6 +57,13 @@ export const FetchForces = (
           Math.abs(force[3]) < 0.0001 ? 0 : +force[3].toPrecision(4),
           Math.abs(force[4]) < 0.0001 ? 0 : +force[4].toPrecision(4),
         ]),
+        displacements: unparsed_data.displacements,
+        member0StiffnessMatrix: unparsed_data.member0StiffnessMatrix,
+        structureStiffnessMatrix: unparsed_data.structureStiffnessMatrix,
+        structureReducedStiffnessMatrix: unparsed_data.structureReducedStiffnessMatrix,
+        reducedForceMatrix: unparsed_data.reducedForceMatrix,
+        globalE: unparsed_data.globalE,
+        globalA: unparsed_data.globalA,
       };
       show = true;
     }

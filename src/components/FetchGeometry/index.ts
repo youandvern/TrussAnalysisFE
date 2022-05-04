@@ -31,7 +31,7 @@ export const FetchGeometry = (
       members: { 1: { start: 2, end: 1, type: "chord" } },
     } as ApiGeometry;
 
-    const res = await fetch("https://encompapp.com/api/TrussGeometry", {
+    const res = await fetch("http://127.0.0.1:5000/api/TrussGeometry", {
       method: "POST",
       cache: "no-cache",
       headers: {

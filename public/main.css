@@ -89,3 +89,9 @@ div.centerdiv {
     font-weight: 750;
   }
 }
+
+@media print {
+  .no-print {
+    display: none;
+  }
+}

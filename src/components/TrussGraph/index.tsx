@@ -5,8 +5,9 @@ import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
 import { MemberForcesSummary, NodeForcesSimple } from "../Interfaces/ApiForces";
+import { GLOBAL_THEME } from "../../App";
 
-interface GeometryProps {
+export interface GeometryProps {
   globalGeometry: ApiGeometryGlobal;
   trussGeometry: ApiGeometry;
   frameHeight: number;
@@ -14,8 +15,10 @@ interface GeometryProps {
   showNodeLabels: boolean;
   showMemberLabels: boolean;
   showForceArrows: boolean;
+  showAxes?: boolean;
   nodeForces?: NodeForcesSimple;
   memberForcesSummary?: MemberForcesSummary;
+  keySeed?: string;
 }
 
 // Graph canvas to display truss
@@ -27,8 +30,10 @@ export default function TrussGraph({
   showNodeLabels,
   showMemberLabels,
   showForceArrows,
+  showAxes = true,
   nodeForces,
   memberForcesSummary,
+  keySeed = "0",
 }: GeometryProps) {
   const trussHeight = globalGeometry.height;
   const trussWidth = globalGeometry.span;
@@ -46,7 +51,7 @@ export default function TrussGraph({
       <>
         {fx !== 0 && (
           <Arrow
-            key={`fAx-${xp},${yp}`}
+            key={`${keySeed}-fAx-${xp},${yp}`}
             points={[xp, yp, xp + xdir * aSize, yp]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -57,7 +62,7 @@ export default function TrussGraph({
         )}
         {fy !== 0 && (
           <Arrow
-            key={`fAy-${xp},${yp}`}
+            key={`${keySeed}-fAy-${xp},${yp}`}
             points={[xp, yp, xp, yp + ydir * aSize]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -148,14 +153,14 @@ export default function TrussGraph({
     return (
       <>
         <Line
-          key={`pin1-${xp},${yp}`}
+          key={`${keySeed}-pin1-${xp},${yp}`}
           points={[xp - 3 * pSize, -1 * yp + 3 * pSize, xp + 3 * pSize, -1 * yp + 3 * pSize]}
-          stroke="orange"
+          stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={pSize}
           fillAfterStrokeEnabled
         />
         <Line
-          key={`pin2-${xp},${yp}`}
+          key={`${keySeed}-pin2-${xp},${yp}`}
           points={[
             xp - pLength * pSize,
             -1 * yp + pHeight * pLength * pSize,
@@ -164,7 +169,7 @@ export default function TrussGraph({
             xp + pLength * pSize,
             -1 * yp + pHeight * pLength * pSize,
           ]}
-          stroke="orange"
+          stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={pSize * 1}
           fillAfterStrokeEnabled
         />
@@ -176,18 +181,18 @@ export default function TrussGraph({
     return (
       <>
         <Line
-          key={`roll1-${xp},${yp}`}
+          key={`${keySeed}-roll1-${xp},${yp}`}
           points={[xp - 3 * rSize, -1 * yp + 3 * rSize, xp + 3 * rSize, -1 * yp + 3 * rSize]}
-          stroke="orange"
+          stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={rSize}
           fillAfterStrokeEnabled
         />
         <Circle
-          key={`roll2-${xp},${yp}`}
+          key={`${keySeed}-roll2-${xp},${yp}`}
           x={xp}
           y={-1 * yp + rSize}
           radius={rSize * 1.25}
-          stroke="orange"
+          stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={rSize}
         />
       </>
@@ -202,7 +207,7 @@ export default function TrussGraph({
         y={y - yOffset}
         text={i}
         fontSize={offSet * 3}
-        key={`nLabel-${x},${y}`}
+        key={`${keySeed}-nLabel-${x},${y}`}
       />
     );
   };
@@ -213,7 +218,13 @@ export default function TrussGraph({
     return (
       <Label x={x - 0.75 * size * i.length} y={y - size} opacity={1.0} key={`mLabel-${i}`}>
         <Tag fill="white" cornerRadius={size} key={`mLabelg-${i}`} />
-        <Text text={i} fontSize={size * 2} fill="blue" padding={size / 4} key={`mLabelx-${i}`} />
+        <Text
+          text={i}
+          fontSize={size * 2}
+          fill={GLOBAL_THEME.palette.primary.main}
+          padding={size / 4}
+          key={`${keySeed}-mLabelx-${i}`}
+        />
       </Label>
     );
   };
@@ -225,7 +236,7 @@ export default function TrussGraph({
         x={border * fscale}
         y={frameHeight - borderBot * fscale}
       >
-        {axes(0, frameHeight / fscale - 5 * nodeSize - border, 5 * nodeSize)}
+        {showAxes && axes(0, frameHeight / fscale - 5 * nodeSize - border, 5 * nodeSize)}
 
         {Object.entries(trussGeometry.members).map(([iMember, member]) => {
           const points = {
@@ -237,9 +248,13 @@ export default function TrussGraph({
           return (
             <>
               <Line
-                key={"member-" + iMember}
+                key={`${keySeed}-member-${iMember}`}
                 points={[points.x1, -1 * points.y1, points.x2, -1 * points.y2]}
-                stroke={member.color && memberForcesSummary ? member.color : "blue"}
+                stroke={
+                  member.color && memberForcesSummary
+                    ? member.color
+                    : GLOBAL_THEME.palette.primary.main
+                }
                 strokeWidth={nodeSize}
                 fill={"red"}
                 width={nodeSize}
@@ -260,7 +275,13 @@ export default function TrussGraph({
               {node.fixity === "roller" && rollerMarker(node.x, node.y - nodeSize, nodeSize)}
               {thisNodeForce &&
                 forceArrows(node.x, -node.y, thisNodeForce.fx, thisNodeForce.fy, 4 * nodeSize)}
-              <Circle x={node.x} y={-node.y} fill="black" radius={nodeSize} key={"node-" + iNode} />
+              <Circle
+                x={node.x}
+                y={-node.y}
+                fill="black"
+                radius={nodeSize}
+                key={`${keySeed}-node-${iNode}`}
+              />
               {showNodeLabels && nodeLabel(node.x, -1 * node.y, iNode, nodeSize)}
             </>
           );

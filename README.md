@@ -81,6 +81,7 @@ This application was built to simplify and automate truss design for the most co
 - [React.js](https://reactjs.org/)
 - [TrussAnalysis](https://github.com/youandvern/TrussAnalysis)
 - [Encomp](https://github.com/youandvern/encomp)
+- [html2pdf.js](https://www.npmjs.com/package/html-to-pdf-js)
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
