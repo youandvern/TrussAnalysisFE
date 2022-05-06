@@ -17,11 +17,52 @@ interface CalcReportProps {
   memberForces: ApiForcesParsed;
 }
 
-const Caption = (text: string) => (
+const matrixNumTruncator = (val: number) => +val.toPrecision(3) / 1;
+
+const caption = (text: string) => (
   <Typography variant="caption" color="textSecondary" component="p" gutterBottom>
     {text}
   </Typography>
 );
+
+const matrix = (data: any[][]) => (
+  <div className="center-align">
+    <table className="matrix-div">
+      {data.map((val, indexI) => (
+        <tr>
+          {val.map((cell, indexJ) => (
+            <td>{cell}</td>
+          ))}
+        </tr>
+      ))}
+    </table>
+  </div>
+);
+
+const exponent = (base: string, exp: string) => (
+  <span>
+    {base}
+    <sup>{exp}</sup>
+  </span>
+);
+
+const fraction = (top: string, bottom: string) => (
+  <div className="fraction-container">
+    <div className="fraction-top">
+      <span>{top}</span>
+    </div>
+    <div className="fraction-bottom">
+      <span>{bottom}</span>
+    </div>
+  </div>
+);
+
+const trigMatrixArray = [
+  [exponent("c", "2"), exponent("cs", ""), exponent("-c", "2"), exponent("-cs", "")],
+  [exponent("cs", ""), exponent("s", "2"), exponent("-cs", ""), exponent("-s", "2")],
+  [exponent("-c", "2"), exponent("-cs", ""), exponent("c", "2"), exponent("cs", "")],
+  [exponent("-cs", ""), exponent("-s", "2"), exponent("cs", ""), exponent("s", "2")],
+];
 
 // Div holding calculation report
 export default function CalculationReport({ geometryProps, memberForces }: CalcReportProps) {
@@ -33,6 +74,19 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
     geometryProps.frameHeight,
     (geometryProps.frameWidth * totalHeight) / totalWidth
   );
+
+  const member0Length = memberForces.memberForces[0][2];
+  const factoredK0 = memberForces.member0StiffnessMatrix.map((row) =>
+    row.map((cell) =>
+      matrixNumTruncator((cell * member0Length) / (memberForces.globalA * memberForces.globalE))
+    )
+  );
+
+  const kFull = memberForces.structureStiffnessMatrix.map((row) => row.map(matrixNumTruncator));
+  const kReduced = memberForces.structureReducedStiffnessMatrix.map((row) =>
+    row.map(matrixNumTruncator)
+  );
+
   return (
     <div className="calc-report-container" id="calc-report-container">
       <h1>Truss Analysis Calculations</h1>
@@ -58,7 +112,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         memberForcesSummary: undefined,
         keySeed: "1",
       })}
-      {Caption("Figure 1: Truss global configuration")}
+      {caption("Figure 1: Truss global configuration")}
 
       <DataTableSimple
         headerList={["Node ID", "X-Position (ft)", "Y-Position (ft)", "Fixity (if not free)"]}
@@ -69,13 +123,13 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
           val.fixity === "free" ? "--" : val.fixity,
         ])}
       />
-      {Caption("Table 1: Structure node geometry")}
+      {caption("Table 1: Structure node geometry")}
 
       <DataTableSimple
         headerList={memberForces.memberForcesHeaders.slice(0, 3)}
         dataList={memberForces.memberForces.map((memForce) => memForce.slice(0, 3))}
       />
-      {Caption("Table 2: Structure member geometry")}
+      {caption("Table 2: Structure member geometry")}
 
       <h3>2. Applied Loading to Nodes</h3>
       <p>
@@ -93,7 +147,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         memberForcesSummary: undefined,
         keySeed: "2",
       })}
-      {Caption(
+      {caption(
         "Figure 2: Graphical representation of loads applied to the structure (arrow length not to scale)"
       )}
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
@@ -146,7 +200,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
           </div>
         </div>
       </div>
-      {Caption("Figure 3: General member geometry definition")}
+      {caption("Figure 3: General member geometry definition")}
       <p>Having member properties:</p>
       <div className="gen-member-note">
         <span>L </span> <ArrowForwardIcon />
@@ -169,6 +223,47 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         <p>c=cosθ</p>
         <p>s=sinθ</p>
       </div>
+      <p>And a stiffness matrix is assembled for each member using the following equation:</p>
+      <div className="equation-div">
+        <div className="matrix-eq-div">
+          <span>
+            k <sub>i</sub> ={" "}
+          </span>
+          {fraction("AE", "L")}
+          {matrix(trigMatrixArray)}
+        </div>
+      </div>
+      <p>For example, the stiffness matrix for member 0 is:</p>
+      <div className="equation-div">
+        <div className="matrix-eq-div">
+          <span>
+            k <sub>0</sub> ={" "}
+          </span>
+          {fraction(
+            `${memberForces.globalA} * ${memberForces.globalE}`,
+            member0Length.toPrecision(3)
+          )}
+          {matrix(factoredK0)}
+        </div>
+      </div>
+      <h4>3.2 Global Structure Stiffness Matrix</h4>
+      <p>
+        All of the member stiffness matrices will be combined to form the global structure stiffness
+        matrix, K, by grouping each nodal degree of freedom and summing the attached member
+        stiffness matrix elements. For this 2-dimensional truss with N nodes, the global stiffness
+        matrix will be 2Nx2N.
+      </p>
+      <p>
+        This operation yields the following structural stiffness matrix for the above defined truss:
+      </p>
+      {matrix(kFull)}
+      <h4>3.3 Reduced Structure Stiffness Matrix</h4>
+      <p>
+        With the reactions at the structure supports being unknown, the structure stiffness matrix
+        is reduced by removing the rows and columns which correspond to the node support directions,
+        resulting in the reduced structure stiffness matrix, KR:
+      </p>
+      {matrix(kReduced)}
     </div>
   );
 }

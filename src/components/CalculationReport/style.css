@@ -40,3 +40,62 @@
 .equation-div p {
   margin: 0;
 }
+
+.center-align {
+  align-items: center;
+  text-align: center;
+}
+
+.matrix-div {
+  position: relative;
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.matrix-div:before,
+.matrix-div:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  border: 1px solid #000;
+  width: 6px;
+  height: 100%;
+}
+
+.matrix-div:before {
+  left: -6px;
+  border-right: 0px;
+}
+
+.matrix-div:after {
+  right: -6px;
+  border-left: 0px;
+}
+
+.matrix-div td {
+  padding: 5px;
+  padding-block: 3px;
+  text-align: center;
+}
+
+.matrix-div sup {
+  padding-left: 0.25em;
+  font-size: 0.75em;
+}
+
+.matrix-eq-div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fraction-container {
+  text-align: center;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+.fraction-top {
+  width: 100%;
+  border-bottom: solid 2px;
+}
