@@ -2,8 +2,17 @@
   margin-bottom: 2em;
 }
 
+h3 {
+  break-before: always;
+}
+
+h3.no-break {
+  break-before: avoid;
+}
+
 .gen-member-group {
   display: flex;
+  page-break-inside: avoid;
 }
 
 .gen-member-pic {
@@ -48,8 +57,9 @@
 
 .matrix-div {
   position: relative;
-  margin-left: 6px;
-  margin-right: 6px;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  page-break-inside: avoid;
 }
 
 .matrix-div:before,
@@ -63,18 +73,18 @@
 }
 
 .matrix-div:before {
-  left: -6px;
+  left: -0.2em;
   border-right: 0px;
 }
 
 .matrix-div:after {
-  right: -6px;
+  right: -0.2em;
   border-left: 0px;
 }
 
 .matrix-div td {
-  padding: 5px;
-  padding-block: 3px;
+  padding: 0.2em;
+  padding-block: 0.1em;
   text-align: center;
 }
 
@@ -89,6 +99,14 @@
   align-items: center;
 }
 
+.scrollable-matrix {
+  max-height: 100em;
+  overflow: auto;
+  font-size: 0.8em;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
 .fraction-container {
   text-align: center;
   padding-left: 0.5em;
@@ -98,4 +116,8 @@
 .fraction-top {
   width: 100%;
   border-bottom: solid 2px;
+}
+
+.konvajs-content {
+  page-break-inside: avoid;
 }

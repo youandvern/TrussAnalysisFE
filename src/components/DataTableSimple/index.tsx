@@ -20,13 +20,15 @@ interface TableProps {
 // Data table to display 2d data for concrete beam design results
 export default function DataTableSimple({ headerList, dataList }: TableProps) {
   return (
-    <TableContainer component={Paper}>
-      <Table aria-label="custom table">
+    <TableContainer component={Paper} sx={{ width: "fit-content" }}>
+      <Table size="small" sx={{ width: "auto" }} aria-label="data table">
         <TableHead>
           <TableRow>
             {headerList.map((header, hindex) => (
               <TableCell className="title-text" key={"header" + hindex}>
-                <Typography>{header}</Typography>
+                <Typography sx={{ fontWeight: "bold", paddingRight: "2em", fontSize: "0.95em" }}>
+                  {header}
+                </Typography>
               </TableCell>
             ))}
           </TableRow>
@@ -37,7 +39,7 @@ export default function DataTableSimple({ headerList, dataList }: TableProps) {
               {row.map((cell, cindex) => {
                 return (
                   <TableCell key={"data" + rindex + "-" + cindex}>
-                    <Typography>{cell}</Typography>
+                    <Typography sx={{ paddingLeft: "1em", fontSize: "0.95em" }}>{cell}</Typography>
                   </TableCell>
                 );
               })}

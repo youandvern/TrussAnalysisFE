@@ -33,17 +33,23 @@ import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
 
 const printPdf = () => {
-  document.querySelector(".print-only-calc-report")?.classList.add("print-only");
   document
     .querySelectorAll(".not-calc-report")
     .forEach((element) => element?.classList.add("no-print"));
   window.print();
   setTimeout(() => {
-    document.querySelector("#print-only-calc-report")?.classList.remove("print-only");
     document
       .querySelectorAll(".not-calc-report")
       .forEach((element) => element?.classList.remove("no-print"));
-  }, 1000);
+  }, 500);
+};
+
+const showCalculationsDiv = () => {
+  document.querySelector(".print-only-calc-report")?.classList.add("show-calc-report");
+};
+
+const hideCalculationsDiv = () => {
+  document.querySelector(".print-only-calc-report")?.classList.remove("show-calc-report");
 };
 
 // Form and controls for truss analysis tool
@@ -63,6 +69,7 @@ export default function TrussForm() {
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
   const [showForceArrows, setShowForceArrows] = useState(true);
+  const [hideCalculations, setHideCalculations] = useState(true);
 
   const generateForces = (nForces: number) => {
     let forcest = Array<number>(nForces).fill(0);
@@ -203,6 +210,16 @@ export default function TrussForm() {
 
   const handleShowForceArrows = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShowForceArrows(event?.target?.checked);
+  };
+
+  const handleHideCalculations = () => {
+    setHideCalculations(true);
+    hideCalculationsDiv();
+  };
+
+  const handleShowCalculations = () => {
+    setHideCalculations(false);
+    showCalculationsDiv();
   };
 
   useEffect(() => {
@@ -385,10 +402,39 @@ export default function TrussForm() {
                   memberForceResults={memberForces}
                 />
               </Grid>
-              <Grid item xs={12}>
-                <Button variant="outlined" fullWidth color="primary" onClick={printPdf}>
-                  Get PDF
+              <Grid item xs={8}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  color="primary"
+                  onClick={printPdf}
+                  disabled={!showMemberForces}
+                >
+                  Print Calculation Report
                 </Button>
+              </Grid>
+              <Grid item xs={4}>
+                {hideCalculations ? (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    color="primary"
+                    onClick={handleShowCalculations}
+                    disabled={!showMemberForces}
+                  >
+                    Show Calculations
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    color="primary"
+                    onClick={handleHideCalculations}
+                    disabled={!showMemberForces}
+                  >
+                    Hide Calculations
+                  </Button>
+                )}
               </Grid>
             </Grid>
           </Grid>

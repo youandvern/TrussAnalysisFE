@@ -17,7 +17,19 @@ interface CalcReportProps {
   memberForces: ApiForcesParsed;
 }
 
-const matrixNumTruncator = (val: number) => +val.toPrecision(3) / 1;
+const matrixNumTruncator = (val: number, precision?: number) => {
+  console.log(precision ? precision : 3);
+
+  return +val.toPrecision(precision ? precision : 3) / 1;
+};
+
+const arrayToMatrix = (array: any[]) => {
+  let matrix = [];
+  for (let j = 0; j < array.length; j += 2) {
+    matrix.push([j / 2, matrixNumTruncator(array[j]), matrixNumTruncator(array[j + 1])]);
+  }
+  return matrix;
+};
 
 const caption = (text: string) => (
   <Typography variant="caption" color="textSecondary" component="p" gutterBottom>
@@ -25,12 +37,12 @@ const caption = (text: string) => (
   </Typography>
 );
 
-const matrix = (data: any[][]) => (
-  <div className="center-align">
+const matrix = (data: any[][], scrollable = false) => (
+  <div className={"center-align" + (scrollable ? " scrollable-matrix" : "")}>
     <table className="matrix-div">
       {data.map((val, indexI) => (
         <tr>
-          {val.map((cell, indexJ) => (
+          {val.map((cell) => (
             <td>{cell}</td>
           ))}
         </tr>
@@ -74,6 +86,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
     geometryProps.frameHeight,
     (geometryProps.frameWidth * totalHeight) / totalWidth
   );
+  const nNodes = Object.keys(geometryProps.trussGeometry.nodes).length;
 
   const member0Length = memberForces.memberForces[0][2];
   const factoredK0 = memberForces.member0StiffnessMatrix.map((row) =>
@@ -82,10 +95,13 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
     )
   );
 
-  const kFull = memberForces.structureStiffnessMatrix.map((row) => row.map(matrixNumTruncator));
-  const kReduced = memberForces.structureReducedStiffnessMatrix.map((row) =>
-    row.map(matrixNumTruncator)
+  const kFull = memberForces.structureStiffnessMatrix.map((row) =>
+    row.map((val) => matrixNumTruncator(val))
   );
+  const kReduced = memberForces.structureReducedStiffnessMatrix.map((row) =>
+    row.map((val) => matrixNumTruncator(val))
+  );
+  const fReduced = [memberForces.reducedForceMatrix.map((val) => matrixNumTruncator(val))];
 
   return (
     <div className="calc-report-container" id="calc-report-container">
@@ -93,7 +109,8 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       <Typography variant="subtitle1" color="primary" sx={{ fontWeight: "bold" }} gutterBottom>
         Powered by Encomp
       </Typography>
-      <h3>1. Truss Geometry</h3>
+
+      <h3 className="no-break">1. Truss Geometry</h3>
       <p>
         The overall configuration of the 2-dimensional truss is shown in Figure 1. The specific node
         and member configurations are also summarized in Table 1 and Table 2 below.
@@ -113,13 +130,12 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         keySeed: "1",
       })}
       {caption("Figure 1: Truss global configuration")}
-
       <DataTableSimple
         headerList={["Node ID", "X-Position (ft)", "Y-Position (ft)", "Fixity (if not free)"]}
         dataList={Object.entries(geometryProps.trussGeometry.nodes).map(([index, val]) => [
           index,
-          val.x,
-          val.y,
+          matrixNumTruncator(val.x),
+          matrixNumTruncator(val.y),
           val.fixity === "free" ? "--" : val.fixity,
         ])}
       />
@@ -150,6 +166,18 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       {caption(
         "Figure 2: Graphical representation of loads applied to the structure (arrow length not to scale)"
       )}
+      <DataTableSimple
+        headerList={["Node ID", "Fx (kips)", "Fy (kips)"]}
+        dataList={
+          geometryProps.nodeForces
+            ? Object.entries(geometryProps.nodeForces)
+                .filter(([id, forces]) => forces.fy !== 0 || forces.fx !== 0)
+                .map(([id, forces]) => [id, forces.fx, -forces.fy])
+            : [[0, 0, 0]]
+        }
+      />
+      {caption("Table 2: Structure member geometry")}
+
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
       <p>
         With the truss geometry and loading defined above, the member forces and deflections are
@@ -157,6 +185,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         elastically and have sufficient strength at connections to transfer the required load to the
         member.
       </p>
+
       <h4>3.1 Member Stiffness Matrix</h4>
       <p>
         First, each member stiffness matrix is composed in the global coordinate system. For truss
@@ -204,7 +233,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       <p>Having member properties:</p>
       <div className="gen-member-note">
         <span>L </span> <ArrowForwardIcon />
-        <span> Member starting node</span>
+        <span> Member length</span>
       </div>
       <div className="gen-member-note">
         <span>A </span> <ArrowForwardIcon />
@@ -216,7 +245,8 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       </div>
       <p>
         For member axial demand analysis of a determinate truss, A and E may be set equal to any
-        constant for all members.
+        constant for all members. In this analaysis, A has been set to {memberForces.globalA} ft
+        <sup>2</sup> and E has been set to {memberForces.globalE} ksf.
       </p>
       <p>For simplicity in this general example, the following constants are calculated:</p>
       <div className="equation-div">
@@ -246,24 +276,124 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
           {matrix(factoredK0)}
         </div>
       </div>
+
       <h4>3.2 Global Structure Stiffness Matrix</h4>
       <p>
         All of the member stiffness matrices will be combined to form the global structure stiffness
         matrix, K, by grouping each nodal degree of freedom and summing the attached member
-        stiffness matrix elements. For this 2-dimensional truss with N nodes, the global stiffness
-        matrix will be 2Nx2N.
+        stiffness matrix elements. For this 2-dimensional truss with {nNodes} nodes, the global
+        stiffness matrix will be {2 * nNodes}x{2 * nNodes}.
       </p>
       <p>
         This operation yields the following structural stiffness matrix for the above defined truss:
       </p>
-      {matrix(kFull)}
+      {matrix(kFull, true)}
+      {caption("Structure Stiffness Matrix, K")}
+
       <h4>3.3 Reduced Structure Stiffness Matrix</h4>
       <p>
         With the reactions at the structure supports being unknown, the structure stiffness matrix
         is reduced by removing the rows and columns which correspond to the node support directions,
-        resulting in the reduced structure stiffness matrix, KR:
+        resulting in the reduced structure stiffness matrix, K<sub>R</sub> :
       </p>
-      {matrix(kReduced)}
+      {matrix(kReduced, true)}
+      {caption("Reduced Structure Stiffness Matrix")}
+
+      <h4>3.4 Reduced structure force matrix</h4>
+      <p>
+        Given the loads applied to the structure, as described in Table 3, the global force matrix,
+        Q, is assembled to match the dimensional size of the reduced structure stiffness matrix.
+        Each node degree of freedom for the structure will match between the structure force and
+        structure stiffness matrices. Since the reactions at the constrained nodes are unknown until
+        the analysis is completed, the node support direction forces are removed from the global
+        structure force matrix to create the reduced structure load matrix, Q<sub>R</sub> :
+      </p>
+      {matrix(fReduced, true)}
+      {caption("Structural Load Matrix (reduced)")}
+
+      <h4>3.5 Analysis for global displacements</h4>
+      <p>
+        The global nodal displacements are calculated by inverting the reduced stiffness matrix and
+        multiplying it with the reduced structure force matrix.
+      </p>
+      <p>
+        If member cross-sectional areas and material properties are not representative of the
+        real-life truss elements, the node displacements are only of value in comparison to each of
+        the others. These relative displacements are used to calculate the internal member forces in
+        the determinate truss but will not necessarily be equal to the actual displacements of the
+        truss.
+      </p>
+      <p>The resulting displacements along with known support displacements are given below: </p>
+      <DataTableSimple
+        headerList={["Node ID", "Δx (ft)", "Δy (ft)"]}
+        dataList={arrayToMatrix(memberForces.displacements)}
+      />
+      {caption("Table 4: Structure node displacements")}
+
+      <h4>3.6 Calculate member axial demands</h4>
+      <p>
+        Using the relative displacements of each member's start and end nodes along with a
+        transformed stiffness matrix, the axial demand on a member, q, is calculated as follows:
+      </p>
+      <div className="equation-div">
+        <div className="matrix-eq-div">
+          <span>
+            q <sub>i</sub> ={" "}
+          </span>
+          {fraction("AE", "L")}
+          {matrix([["-c", "-s", "c", "s"]])}
+          {matrix([
+            [
+              <span>
+                Δ<sub>Sx</sub>
+              </span>,
+            ],
+            [
+              <span>
+                Δ<sub>Sy</sub>
+              </span>,
+            ],
+            [
+              <span>
+                Δ<sub>Ex</sub>
+              </span>,
+            ],
+            [
+              <span>
+                Δ<sub>Ey</sub>
+              </span>,
+            ],
+          ])}
+        </div>
+      </div>
+      <p>
+        Where Δ<sub>Sx</sub> is the displacement of the starting node in the x-direction for member
+        i.
+      </p>
+      <p>
+        The member axial demands for the truss described above are displayed in Figure 6 and
+        summarized in detail in Table 5 along with the member's length. Tensile axial loads are
+        represented as negative forces, and compression axial demands are represented as positive
+        forces.
+      </p>
+      {TrussGraph({
+        ...geometryProps,
+        showAxes: false,
+        showNodeLabels: false,
+        showMemberLabels: true,
+        showForceArrows: false,
+        keySeed: "3",
+      })}
+      {caption("Figure 6: Structure member loading (kips)")}
+      <DataTableSimple
+        headerList={["Member ID", "Length (ft)", "Axial Demand (kips)"]}
+        dataList={memberForces.memberForces.map((row) => [
+          row[0],
+          matrixNumTruncator(row[2], 4),
+          matrixNumTruncator(row[3], 4),
+        ])}
+      />
+      {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}
     </div>
   );
 }

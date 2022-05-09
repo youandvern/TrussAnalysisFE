@@ -1,4 +1,8 @@
 .print-only-calc-report {
+  display: none;
+}
+
+.show-calc-report {
   display: block;
 }
 
