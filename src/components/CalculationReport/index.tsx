@@ -176,7 +176,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
             : [[0, 0, 0]]
         }
       />
-      {caption("Table 2: Structure member geometry")}
+      {caption("Table 3: Applied loading to nodes")}
 
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
       <p>
@@ -270,8 +270,8 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
             k <sub>0</sub> ={" "}
           </span>
           {fraction(
-            `${memberForces.globalA} * ${memberForces.globalE}`,
-            member0Length.toPrecision(3)
+            `${memberForces.globalA} sf * ${memberForces.globalE} ksf`,
+            member0Length.toPrecision(3) + " ft"
           )}
           {matrix(factoredK0)}
         </div>
@@ -371,7 +371,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         i.
       </p>
       <p>
-        The member axial demands for the truss described above are displayed in Figure 6 and
+        The member axial demands for the truss described above are displayed in Figure 4 and
         summarized in detail in Table 5 along with the member's length. Tensile axial loads are
         represented as negative forces, and compression axial demands are represented as positive
         forces.
@@ -384,7 +384,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         showForceArrows: false,
         keySeed: "3",
       })}
-      {caption("Figure 6: Structure member loading (kips)")}
+      {caption("Figure 4: Structure member loading (kips)")}
       <DataTableSimple
         headerList={["Member ID", "Length (ft)", "Axial Demand (kips)"]}
         dataList={memberForces.memberForces.map((row) => [
