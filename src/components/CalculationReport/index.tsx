@@ -77,15 +77,15 @@ const trigMatrixArray = [
 
 // Div holding calculation report
 export default function CalculationReport({ geometryProps, memberForces }: CalcReportProps) {
-  const nodeSize =
+  const nodeSizeEst =
     Math.max(geometryProps.globalGeometry.height * 3, geometryProps.globalGeometry.span) / 100;
-  const totalWidth = geometryProps.globalGeometry.span + 8 * nodeSize;
-  const totalHeight = geometryProps.globalGeometry.height + 9 * nodeSize;
+  const totalWidth = geometryProps.globalGeometry.span + 8 * nodeSizeEst;
+  const totalHeight = geometryProps.globalGeometry.height + 9 * nodeSizeEst;
   const trussOnlyFrameHeight = Math.min(
     geometryProps.frameHeight,
     (geometryProps.frameWidth * totalHeight) / totalWidth
   );
-  const nNodes = Object.keys(geometryProps.trussGeometry.nodes).length;
+  const nodesLength = Object.keys(geometryProps.trussGeometry.nodes).length;
 
   const member0Length = memberForces.memberForces[0][2];
   const factoredK0 = memberForces.member0StiffnessMatrix.map((row) =>
@@ -280,8 +280,8 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       <p>
         All of the member stiffness matrices will be combined to form the global structure stiffness
         matrix, K, by grouping each nodal degree of freedom and summing the attached member
-        stiffness matrix elements. For this 2-dimensional truss with {nNodes} nodes, the global
-        stiffness matrix will be {2 * nNodes}x{2 * nNodes}.
+        stiffness matrix elements. For this 2-dimensional truss with {nodesLength} nodes, the global
+        stiffness matrix will be {2 * nodesLength}x{2 * nodesLength}.
       </p>
       <p>
         This operation yields the following structural stiffness matrix for the above defined truss:

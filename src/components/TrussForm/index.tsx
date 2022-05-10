@@ -32,7 +32,7 @@ import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
 
-const throttle = require("lodash.debounce");
+const debounce = require("lodash.debounce");
 
 const printPdf = () => {
   document
@@ -230,7 +230,7 @@ export default function TrussForm() {
 
   const throttledFetchGeometry = useMemo(
     () =>
-      throttle(
+      debounce(
         (span1: number, height1: number, nWeb1: number, trussType1: string) =>
           FetchGeometry(span1, height1, nWeb1, trussType1).then((result) =>
             setGeometry(result.data)
