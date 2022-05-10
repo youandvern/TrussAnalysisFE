@@ -17,11 +17,8 @@ interface CalcReportProps {
   memberForces: ApiForcesParsed;
 }
 
-const matrixNumTruncator = (val: number, precision?: number) => {
-  console.log(precision ? precision : 3);
-
-  return +val.toPrecision(precision ? precision : 3) / 1;
-};
+const matrixNumTruncator = (val: number, precision?: number) =>
+  +val.toPrecision(precision ? precision : 3) / 1;
 
 const arrayToMatrix = (array: any[]) => {
   let matrix = [];
@@ -40,13 +37,15 @@ const caption = (text: string) => (
 const matrix = (data: any[][], scrollable = false) => (
   <div className={"center-align" + (scrollable ? " scrollable-matrix" : "")}>
     <table className="matrix-div">
-      {data.map((val, indexI) => (
-        <tr>
-          {val.map((cell) => (
-            <td>{cell}</td>
-          ))}
-        </tr>
-      ))}
+      <tbody>
+        {data.map((val, indexI) => (
+          <tr>
+            {val.map((cell) => (
+              <td>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
     </table>
   </div>
 );

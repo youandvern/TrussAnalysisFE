@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
 import "./style.css";
 
@@ -31,6 +31,8 @@ import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
+
+const throttle = require("lodash.debounce");
 
 const printPdf = () => {
   document
@@ -226,13 +228,21 @@ export default function TrussForm() {
     resetForces();
   }, [nWeb, nNodes, resetForces]);
 
+  const throttledFetchGeometry = useMemo(
+    () =>
+      throttle(
+        (span1: number, height1: number, nWeb1: number, trussType1: string) =>
+          FetchGeometry(span1, height1, nWeb1, trussType1).then((result) =>
+            setGeometry(result.data)
+          ),
+        500
+      ),
+    []
+  );
+
   useEffect(() => {
-    FetchGeometry(span, height, nWeb, trussType).then((result) => {
-      // setShowResult(result.show); // for forces results
-      // const r = setResults ? setResults(result.data) : null; // for forces results
-      setGeometry(result.data);
-    });
-  }, [span, height, nWeb, trussType]);
+    throttledFetchGeometry(span, height, nWeb, trussType);
+  }, [span, height, nWeb, trussType, throttledFetchGeometry]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
