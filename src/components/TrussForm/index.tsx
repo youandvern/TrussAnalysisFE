@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
+import { useQueryParam, NumberParam, StringParam } from "use-query-params";
 import "./style.css";
 
 import {
@@ -31,8 +32,14 @@ import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
+import { Query2dNumberArray } from "./Query2dNumberArray";
 
 const debounce = require("lodash.debounce");
+
+const DEFAULT_SPAN = 16;
+const DEFAULT_HEIGHT = 4;
+const DEFAULT_NWEB = 1;
+const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
 
 const printPdf = () => {
   document
@@ -56,16 +63,15 @@ const hideCalculationsDiv = () => {
 
 // Form and controls for truss analysis tool
 export default function TrussForm() {
-  const [span, setSpan] = useState(16);
-  const [height, setHeight] = useState(4);
-  const [nWeb, setNWeb] = useState(1);
-  const [trussType, setTrussType] = useState(TRUSS_TYPES[0].type);
+  const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", NumberParam);
+  const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
+  const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
+  const [trussType = DEFAULT_TRUSS_TYPE, setTrussType] = useQueryParam("trussType", StringParam);
+
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
-
   const [frameWidth, setFrameWidth] = useState(window.innerWidth / 2);
   const [frameHeight, setFrameHeight] = useState(window.innerHeight / 2);
-
   const graphGridRef = useRef<HTMLDivElement>(null);
 
   const [showNodeLabels, setShowNodeLabels] = useState(true);
@@ -74,9 +80,10 @@ export default function TrussForm() {
   const [hideCalculations, setHideCalculations] = useState(true);
 
   const generateForces = (nForces: number) => {
-    let forcest = Array<number>(nForces).fill(0);
-    return forcest.map((forcex, index) => [index, 0, 0]);
+    let zeros = Array<number>(nForces).fill(0);
+    return zeros.map((_zero, index) => [index, 0, 0]);
   };
+  const DEFAULT_FORCES = useMemo(() => generateForces(nNodes), [nNodes]);
 
   const generateForceArrows = (nForces: number) => {
     let forceArrows = {} as NodeForcesSimple;
@@ -86,7 +93,9 @@ export default function TrussForm() {
     return forceArrows;
   };
 
-  const [forces, setForces] = useState(generateForces(nNodes));
+  // const [forces, setForces] = useState(generateForces(nNodes));
+  const [forces, setForces] = useQueryParam("zforces", Query2dNumberArray);
+
   const [showForces, setShowForces] = useState(false);
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
   const [forceArrows, setForceArrows] = useState(generateForceArrows(nNodes));
@@ -99,7 +108,7 @@ export default function TrussForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setForces((oldForces) =>
-      oldForces.map((rowArray, rindex) => {
+      (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
         if (rindex === row) {
           const newRow = [...rowArray];
           newRow[col] = +e.target.value;
@@ -118,8 +127,8 @@ export default function TrussForm() {
 
   const resetForces = useCallback(() => {
     setForceArrows(generateForceArrows(nNodes));
-    setForces(generateForces(nNodes));
-  }, [nNodes]);
+    setForces(undefined);
+  }, [nNodes, setForces]);
 
   const updateForceArrows = (nodeId: string, fx?: number, fy?: number) => {
     setForceArrows((oldForceArrows) => {
@@ -142,8 +151,14 @@ export default function TrussForm() {
 
   const updateMemberForces = useCallback(() => {
     // Flip y-axis direction
-    const forcesCorrected = forces.map((force) => [force[0], force[1], -1 * force[2]]);
-    FetchForces(span, height, nWeb, forcesCorrected, trussType).then((result) => {
+    const forcesCorrected = forces?.map((force) => [force[0], force[1], -1 * force[2]]);
+    FetchForces(
+      span || DEFAULT_SPAN,
+      height || DEFAULT_HEIGHT,
+      nWeb || DEFAULT_NWEB,
+      forcesCorrected || DEFAULT_FORCES,
+      trussType || DEFAULT_TRUSS_TYPE
+    ).then((result) => {
       // Get spread of forces for color calculations
       let max = result.data.memberForces[0][3];
       let min = result.data.memberForces[0][3];
@@ -165,7 +180,7 @@ export default function TrussForm() {
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
-  }, [span, height, nWeb, forces, geometry?.members, trussType]);
+  }, [span, height, nWeb, forces, geometry?.members, trussType, DEFAULT_FORCES]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -180,8 +195,9 @@ export default function TrussForm() {
     if (nodeIds && form) {
       const fx = +form["Fx"]["value"] || 0;
       const fy = +form["Fy"]["value"] || 0;
+
       setForces((oldForces) =>
-        oldForces.map((rowArray, rindex) => {
+        (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
           if (nodeIds.includes(rindex)) {
             const newRow = [...rowArray];
 
@@ -194,7 +210,7 @@ export default function TrussForm() {
       );
       nodeIds.forEach((nodeId) => updateForceArrows(nodeId.toString(), fx, fy));
     } else {
-      console.log("Error: top nodes not found.");
+      console.log("Error: nodes not found.");
     }
   };
 
@@ -241,7 +257,12 @@ export default function TrussForm() {
   );
 
   useEffect(() => {
-    throttledFetchGeometry(span, height, nWeb, trussType);
+    throttledFetchGeometry(
+      span || DEFAULT_SPAN,
+      height || DEFAULT_HEIGHT,
+      nWeb || DEFAULT_NWEB,
+      trussType || DEFAULT_TRUSS_TYPE
+    );
   }, [span, height, nWeb, trussType, throttledFetchGeometry]);
 
   // reset truss graph scaling to fit inside component when window size changes
@@ -267,14 +288,17 @@ export default function TrussForm() {
   useEffect(() => {
     setShowMemberForces(false);
     setMemberForcesSummary(undefined);
-  }, [span, height, nWeb, forces, trussType]);
+  }, [span, height, nWeb, trussType]);
 
   return (
     <>
       <div className="not-calc-report">
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <TrussStyleSelector trussType={trussType} handleChange={handleChangeTrussType} />
+            <TrussStyleSelector
+              trussType={trussType || DEFAULT_TRUSS_TYPE}
+              handleChange={handleChangeTrussType}
+            />
           </Grid>
           <Grid item xs={3} ref={graphGridRef}>
             <LabeledSwitch
@@ -318,7 +342,7 @@ export default function TrussForm() {
               <Grid item xs={3}>
                 <NumInput
                   label="Truss Span"
-                  value={span}
+                  value={span || DEFAULT_SPAN}
                   onChange={handleSetSpan}
                   unit="ft"
                   min={1}
@@ -330,7 +354,7 @@ export default function TrussForm() {
               <Grid item xs={3}>
                 <NumInput
                   label="Truss Height"
-                  value={height}
+                  value={height || DEFAULT_HEIGHT}
                   onChange={handleSetHeight}
                   unit="ft"
                   min={1}
@@ -342,7 +366,7 @@ export default function TrussForm() {
               <Grid item xs={6}>
                 <NumSlider
                   label="Number of Web Bays (per side):"
-                  value={nWeb}
+                  value={nWeb || DEFAULT_NWEB}
                   onChange={setNWeb}
                   min={1}
                   max={10}
@@ -353,7 +377,7 @@ export default function TrussForm() {
               <Grid item xs={8}>
                 <Accordion
                   expanded={showForces}
-                  onChange={(e, expanded) => {
+                  onChange={(_e, expanded) => {
                     setShowForces(expanded);
                   }}
                 >
@@ -394,7 +418,7 @@ export default function TrussForm() {
                     </Button>
                     <DataTable
                       headerList={["Node", "Fx (kips)", "Fy (kips)"]}
-                      dataList={forces}
+                      dataList={forces || DEFAULT_FORCES}
                       setDataList={updateForces}
                       firstColumnEditable={false}
                       title="Individual Node Forces"

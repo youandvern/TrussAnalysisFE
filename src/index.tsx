@@ -1,5 +1,7 @@
 import React from "react";
 import * as ReactDOMClient from "react-dom/client";
+import { BrowserRouter, Route } from "react-router-dom";
+import { QueryParamProvider } from "use-query-params";
 import "./index.css?v=1";
 import App from "./App";
 import HomeBar from "./components/HomeBar";
@@ -19,7 +21,11 @@ if (!mainRootContainer) throw new Error("Failed to find root element");
 const mainRoot = ReactDOMClient.createRoot(mainRootContainer);
 mainRoot.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <QueryParamProvider ReactRouterRoute={Route}>
+        <App />
+      </QueryParamProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
