@@ -1,6 +1,7 @@
 import ApiForces, { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/ApiForces";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import { unitToForce, unitToLength } from "../UnitSelector";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
@@ -14,7 +15,8 @@ export const FetchForces = (
   height: number,
   nWeb: number,
   forces: number[][],
-  trussType?: string
+  trussType?: string,
+  unitType?: string
 ): Promise<FetchForcesObject> => {
   const request_dict = {
     span: span,
@@ -48,8 +50,8 @@ export const FetchForces = (
         memberForcesHeaders: [
           "Member ID",
           "Start -> End Node",
-          "Length (ft)",
-          "Axial Force (kips)",
+          `Length (${unitToLength(unitType)})`,
+          `Axial Force (${unitToForce(unitType)})`,
         ],
         memberForces: unparsed_data.memberForces.map((force) => [
           force[0],

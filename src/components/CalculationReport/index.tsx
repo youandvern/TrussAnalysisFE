@@ -10,11 +10,13 @@ import EndNodeSymbol from "./images/EndNodeSymbol.png";
 import MemberDirectionSymbol from "./images/MemberDirectionSymbol.png";
 import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
 import StartNodeSymbol from "./images/StartNodeSymbol.png";
+import { unitToLength, unitToForce, unitToCalcStress } from "../UnitSelector";
 
 // expected properties given to Labeled Switch
 interface CalcReportProps {
   geometryProps: GeometryProps;
   memberForces: ApiForcesParsed;
+  unitType?: string;
 }
 
 const matrixNumTruncator = (val: number, precision?: number) =>
@@ -57,7 +59,7 @@ const exponent = (base: string, exp: string) => (
   </span>
 );
 
-const fraction = (top: string, bottom: string) => (
+const fraction = (top: string | JSX.Element, bottom: string | JSX.Element) => (
   <div className="fraction-container">
     <div className="fraction-top">
       <span>{top}</span>
@@ -76,7 +78,13 @@ const trigMatrixArray = [
 ];
 
 // Div holding calculation report
-export default function CalculationReport({ geometryProps, memberForces }: CalcReportProps) {
+export default function CalculationReport({
+  geometryProps,
+  memberForces,
+  unitType,
+}: CalcReportProps) {
+  const lengthUnit = unitToLength(unitType);
+  const forceUnit = unitToForce(unitType);
   const nodeSizeEst =
     Math.max(geometryProps.globalGeometry.height * 3, geometryProps.globalGeometry.span) / 100;
   const totalWidth = geometryProps.globalGeometry.span + 8 * nodeSizeEst;
@@ -115,8 +123,8 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         and member configurations are also summarized in Table 1 and Table 2 below.
       </p>
       <p>
-        The total span of the truss is {geometryProps.globalGeometry.height} ft and overall height
-        of the truss is {geometryProps.globalGeometry.span} ft.
+        The total span of the truss is {geometryProps.globalGeometry.height} {lengthUnit} and
+        overall height of the truss is {geometryProps.globalGeometry.span} {lengthUnit}.
       </p>
       {TrussGraph({
         ...geometryProps,
@@ -130,7 +138,12 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       })}
       {caption("Figure 1: Truss global configuration")}
       <DataTableSimple
-        headerList={["Node ID", "X-Position (ft)", "Y-Position (ft)", "Fixity (if not free)"]}
+        headerList={[
+          "Node ID",
+          `X-Position (${lengthUnit})`,
+          `Y-Position (${lengthUnit})`,
+          "Fixity (if not free)",
+        ]}
         dataList={Object.entries(geometryProps.trussGeometry.nodes).map(([index, val]) => [
           index,
           matrixNumTruncator(val.x),
@@ -166,7 +179,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         "Figure 2: Graphical representation of loads applied to the structure (arrow length not to scale)"
       )}
       <DataTableSimple
-        headerList={["Node ID", "Fx (kips)", "Fy (kips)"]}
+        headerList={["Node ID", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
         dataList={
           geometryProps.nodeForces
             ? Object.entries(geometryProps.nodeForces)
@@ -244,8 +257,9 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       </div>
       <p>
         For member axial demand analysis of a determinate truss, A and E may be set equal to any
-        constant for all members. In this analaysis, A has been set to {memberForces.globalA} ft
-        <sup>2</sup> and E has been set to {memberForces.globalE} ksf.
+        constant for all members. In this analaysis, A has been set to {memberForces.globalA}{" "}
+        {lengthUnit}
+        <sup>2</sup> and E has been set to {memberForces.globalE} {unitToCalcStress(unitType)}.
       </p>
       <p>For simplicity in this general example, the following constants are calculated:</p>
       <div className="equation-div">
@@ -269,8 +283,11 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
             k <sub>0</sub> ={" "}
           </span>
           {fraction(
-            `${memberForces.globalA} sf * ${memberForces.globalE} ksf`,
-            member0Length.toPrecision(3) + " ft"
+            <span>
+              {memberForces.globalA} {lengthUnit} <sup>2</sup> * {memberForces.globalE}{" "}
+              {unitToCalcStress(unitType)}
+            </span>,
+            member0Length.toPrecision(3) + lengthUnit
           )}
           {matrix(factoredK0)}
         </div>
@@ -324,7 +341,7 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
       </p>
       <p>The resulting displacements along with known support displacements are given below: </p>
       <DataTableSimple
-        headerList={["Node ID", "Δx (ft)", "Δy (ft)"]}
+        headerList={["Node ID", `Δx (${lengthUnit})`, `Δy (${lengthUnit})`]}
         dataList={arrayToMatrix(memberForces.displacements)}
       />
       {caption("Table 4: Structure node displacements")}
@@ -383,9 +400,9 @@ export default function CalculationReport({ geometryProps, memberForces }: CalcR
         showForceArrows: false,
         keySeed: "3",
       })}
-      {caption("Figure 4: Structure member loading (kips)")}
+      {caption(`Figure 4: Structure member loading (${forceUnit})`)}
       <DataTableSimple
-        headerList={["Member ID", "Length (ft)", "Axial Demand (kips)"]}
+        headerList={["Member ID", `Length (${lengthUnit})`, `Axial Demand (${forceUnit})`]}
         dataList={memberForces.memberForces.map((row) => [
           row[0],
           matrixNumTruncator(row[2], 4),

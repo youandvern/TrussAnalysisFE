@@ -33,6 +33,7 @@ import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
 import { Query2dNumberArray } from "./Query2dNumberArray";
+import UnitSelector, { US_UNIT, unitToForce, unitToLength } from "../UnitSelector";
 
 const debounce = require("lodash.debounce");
 
@@ -72,6 +73,8 @@ export default function TrussForm() {
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
   const [frameWidth, setFrameWidth] = useState(window.innerWidth / 2);
   const [frameHeight, setFrameHeight] = useState(window.innerHeight / 2);
+  const [unitType, setUnitType] = useState(US_UNIT);
+  const forceUnit = unitToForce(unitType);
   const graphGridRef = useRef<HTMLDivElement>(null);
 
   const [showNodeLabels, setShowNodeLabels] = useState(true);
@@ -157,7 +160,8 @@ export default function TrussForm() {
       height || DEFAULT_HEIGHT,
       nWeb || DEFAULT_NWEB,
       forcesCorrected || DEFAULT_FORCES,
-      trussType || DEFAULT_TRUSS_TYPE
+      trussType || DEFAULT_TRUSS_TYPE,
+      unitType
     ).then((result) => {
       // Get spread of forces for color calculations
       let max = result.data.memberForces[0][3];
@@ -180,7 +184,7 @@ export default function TrussForm() {
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
-  }, [span, height, nWeb, forces, geometry?.members, trussType, DEFAULT_FORCES]);
+  }, [span, height, nWeb, forces, geometry?.members, trussType, unitType, DEFAULT_FORCES]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -228,6 +232,10 @@ export default function TrussForm() {
 
   const handleShowForceArrows = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShowForceArrows(event?.target?.checked);
+  };
+
+  const handleChangeUnitType = (_event: React.MouseEvent<HTMLElement>, value: any) => {
+    setUnitType(value);
   };
 
   const handleHideCalculations = () => {
@@ -288,7 +296,8 @@ export default function TrussForm() {
   useEffect(() => {
     setShowMemberForces(false);
     setMemberForcesSummary(undefined);
-  }, [span, height, nWeb, trussType]);
+    handleHideCalculations();
+  }, [span, height, nWeb, trussType, unitType]);
 
   return (
     <>
@@ -321,6 +330,9 @@ export default function TrussForm() {
               handleChange={handleShowForceArrows}
             />
           </Grid>
+          <Grid item xs={3} ref={graphGridRef}>
+            <UnitSelector unitType={unitType} handleChange={handleChangeUnitType} />
+          </Grid>
           <Grid item xs={12} ref={graphGridRef}>
             {geometry && (
               <TrussGraph
@@ -344,7 +356,7 @@ export default function TrussForm() {
                   label="Truss Span"
                   value={span || DEFAULT_SPAN}
                   onChange={handleSetSpan}
-                  unit="ft"
+                  unit={unitToLength(unitType)}
                   min={1}
                   max={500}
                   step={1}
@@ -356,7 +368,7 @@ export default function TrussForm() {
                   label="Truss Height"
                   value={height || DEFAULT_HEIGHT}
                   onChange={handleSetHeight}
-                  unit="ft"
+                  unit={unitToLength(unitType)}
                   min={1}
                   max={200}
                   step={1}
@@ -394,18 +406,18 @@ export default function TrussForm() {
                       onSubmit={() => handleSetNodeForces(geometry?.topNodeIds, setTopForcesForm)}
                       buttonTitle="Top Nodes:"
                       inputLabel1="Fx"
-                      inputUnit1="kips"
+                      inputUnit1={forceUnit}
                       inputLabel2="Fy"
-                      inputUnit2="kips"
+                      inputUnit2={forceUnit}
                     />
                     <RowForm
                       formRef={setBotForcesForm}
                       onSubmit={() => handleSetNodeForces(geometry?.botNodeIds, setBotForcesForm)}
                       buttonTitle="Bottom Nodes:"
                       inputLabel1="Fx"
-                      inputUnit1="kips"
+                      inputUnit1={forceUnit}
                       inputLabel2="Fy"
-                      inputUnit2="kips"
+                      inputUnit2={forceUnit}
                     />
                     <Button
                       variant="outlined"
@@ -417,7 +429,7 @@ export default function TrussForm() {
                       Reset Forces to Zero
                     </Button>
                     <DataTable
-                      headerList={["Node", "Fx (kips)", "Fy (kips)"]}
+                      headerList={["Node", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
                       dataList={forces || DEFAULT_FORCES}
                       setDataList={updateForces}
                       firstColumnEditable={false}
@@ -476,7 +488,7 @@ export default function TrussForm() {
         </Grid>
       </div>
       <div id="print-only-calc-report" className="print-only-calc-report">
-        {(geometry || false) && (
+        {geometry && (
           <CalculationReport
             geometryProps={{
               globalGeometry: { span, height, nWeb } as ApiGeometryGlobal,
@@ -490,6 +502,7 @@ export default function TrussForm() {
               nodeForces: forceArrows,
             }}
             memberForces={memberForces}
+            unitType={unitType}
           />
         )}
       </div>
