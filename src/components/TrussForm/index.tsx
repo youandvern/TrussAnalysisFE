@@ -248,17 +248,22 @@ export default function TrussForm() {
     showCalculationsDiv();
   };
 
+  // nNodes is 0 on initial render, then geometry is fetched for the first time and forces would be reset.
+  // If forces are given in URL then we don't want to reset these forces after the initial render, only afterwards.
+  const geometryFetchCount = useRef(0);
+
   useEffect(() => {
-    resetForces();
+    if (geometryFetchCount.current > 1) resetForces();
   }, [nWeb, nNodes, resetForces]);
 
   const throttledFetchGeometry = useMemo(
     () =>
       debounce(
         (span1: number, height1: number, nWeb1: number, trussType1: string) =>
-          FetchGeometry(span1, height1, nWeb1, trussType1).then((result) =>
-            setGeometry(result.data)
-          ),
+          FetchGeometry(span1, height1, nWeb1, trussType1).then((result) => {
+            setGeometry(result.data);
+            geometryFetchCount.current++;
+          }),
         500
       ),
     []
