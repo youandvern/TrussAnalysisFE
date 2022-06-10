@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
-import { useQueryParam, NumberParam, StringParam } from "use-query-params";
+import { useQueryParam, NumberParam, StringParam, NumericObjectParam } from "use-query-params";
 import "./style.css";
 
 import {
@@ -27,6 +27,7 @@ import DataTable from "../DataTableControlled";
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { FetchForces } from "../FetchForces";
 import MemberForceResults from "../MemberForceResults";
+import MemberPropertiesForm, { MemberPropsType } from "../MemberPropertiesForm";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
 import RowForm from "../RowForm";
 import LabeledSwitch from "../LabeledSwitch";
@@ -41,6 +42,23 @@ const DEFAULT_SPAN = 16;
 const DEFAULT_HEIGHT = 4;
 const DEFAULT_NWEB = 1;
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
+const DEFAULT_A = 5;
+const DEFAULT_E = 29000;
+
+const queryToMemberProps = (
+  defaultVal: number,
+  objectVal:
+    | {
+        [key: string]: number | null | undefined;
+      }
+    | null
+    | undefined
+) =>
+  ({
+    top: objectVal?.top || defaultVal,
+    bot: objectVal?.bot || defaultVal,
+    web: objectVal?.web || defaultVal,
+  } as MemberPropsType);
 
 const printPdf = () => {
   document
@@ -68,6 +86,8 @@ export default function TrussForm() {
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
   const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
   const [trussType = DEFAULT_TRUSS_TYPE, setTrussType] = useQueryParam("trussType", StringParam);
+  const [elasticModulusProps, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
+  const [areaProps, setAreaProps] = useQueryParam("area", NumericObjectParam);
 
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
@@ -100,6 +120,7 @@ export default function TrussForm() {
   const [forces, setForces] = useQueryParam("zforces", Query2dNumberArray);
 
   const [showForces, setShowForces] = useState(false);
+  const [showSections, setShowSections] = useState(false);
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
   const [forceArrows, setForceArrows] = useState(generateForceArrows(nNodes));
   const setTopForcesForm = useRef(null);
@@ -181,6 +202,7 @@ export default function TrussForm() {
 
       setMemberForcesSummary({ max: max, min: min });
       setShowForces(!result.show);
+      setShowSections(false);
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
@@ -192,6 +214,34 @@ export default function TrussForm() {
 
   const handleSetHeight = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setHeight(+event?.target?.value);
+  };
+
+  // only store areas in url if it differs from the default
+  const handleSetArea = (
+    memberType: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const newArea = +e?.target?.value;
+    if (newArea !== DEFAULT_A)
+      setAreaProps((oldAreaProps) => {
+        const newAreaProps = oldAreaProps ? { ...oldAreaProps } : {};
+        newAreaProps[memberType] = newArea;
+        return newAreaProps;
+      });
+  };
+
+  // only store elastic modulus in url if it differs from the default
+  const handleSetElasticMod = (
+    memberType: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const newElasticMod = +e?.target?.value;
+    if (newElasticMod !== DEFAULT_E)
+      setElasticModulusProps((oldElasticModProps) => {
+        const newElasticModProps = oldElasticModProps ? { ...oldElasticModProps } : {};
+        newElasticModProps[memberType] = newElasticMod;
+        return newElasticModProps;
+      });
   };
 
   const handleSetNodeForces = (nodeIds?: number[], formRef?: React.MutableRefObject<null>) => {
@@ -439,6 +489,30 @@ export default function TrussForm() {
                       setDataList={updateForces}
                       firstColumnEditable={false}
                       title="Individual Node Forces"
+                    />
+                  </AccordionDetails>
+                </Accordion>
+                <Accordion
+                  expanded={showSections}
+                  onChange={(_e, expanded) => {
+                    setShowSections(expanded);
+                  }}
+                  sx={{ marginTop: "1em" }}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1b-content"
+                    id="panel1b-header"
+                  >
+                    <Typography>Cross-sectional Properties of Members (Optional)</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <MemberPropertiesForm
+                      areaProps={queryToMemberProps(DEFAULT_A, areaProps)}
+                      setAreaProps={handleSetArea}
+                      eModulusProps={queryToMemberProps(DEFAULT_E, elasticModulusProps)}
+                      setEModProps={handleSetElasticMod}
+                      unitType={unitType}
                     />
                   </AccordionDetails>
                 </Accordion>

@@ -21,6 +21,7 @@ export const METRIC_UNIT = "metric";
 
 export const unitToLength = (unit?: string) => (unit === METRIC_UNIT ? "m" : "ft");
 export const unitToForce = (unit?: string) => (unit === METRIC_UNIT ? "kN" : "kips");
+export const unitToInputArea = (unit?: string) => (unit === METRIC_UNIT ? "mm^2" : "in^2");
 export const unitToCalcStress = (unit?: string) => (unit === METRIC_UNIT ? "kN/m^2" : "ksf");
 export const unitToInputStress = (unit?: string) => (unit === METRIC_UNIT ? "MPa" : "ksi");
 export const unitToStressFactorCalcToInput = (unit?: string) => (unit === METRIC_UNIT ? 1000 : 144);

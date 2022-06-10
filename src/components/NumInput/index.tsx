@@ -1,6 +1,6 @@
 import React from "react";
 import "./style.css";
-import { FormControl, InputLabel, OutlinedInput, InputAdornment } from "@mui/material/";
+import { FormControl, InputLabel, OutlinedInput, InputAdornment, Tooltip } from "@mui/material/";
 
 // expected properties given to NumInput
 interface NumProps {
@@ -8,6 +8,7 @@ interface NumProps {
   value?: number;
   onChange?: (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   unit?: string;
+  toolTip?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -18,6 +19,7 @@ export default function NumInput({
   label = "label",
   value,
   onChange,
+  toolTip,
   unit = "in",
   min = 0,
   max = 10,
@@ -25,25 +27,27 @@ export default function NumInput({
 }: NumProps) {
   return (
     // outlined group of label and input
-    <FormControl fullWidth variant="outlined">
-      <InputLabel>{label}</InputLabel>
-      <OutlinedInput
-        label={label}
-        name={label}
-        value={value}
-        // change the value whenever the input is changed (restrict within min/max bounds)
-        onChange={onChange}
-        // add unit to the end
-        endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
-        aria-describedby="standard-weight-helper-text"
-        type="number"
-        inputProps={{
-          min: min,
-          max: max,
-          step: step,
-        }}
-      />
-    </FormControl>
+    <Tooltip title={toolTip || ""} followCursor>
+      <FormControl fullWidth variant="outlined">
+        <InputLabel>{label}</InputLabel>
+        <OutlinedInput
+          label={label}
+          name={label}
+          value={value}
+          // change the value whenever the input is changed (restrict within min/max bounds)
+          onChange={onChange}
+          // add unit to the end
+          endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
+          aria-describedby="standard-weight-helper-text"
+          type="number"
+          inputProps={{
+            min: min,
+            max: max,
+            step: step,
+          }}
+        />
+      </FormControl>
+    </Tooltip>
   );
 }
 
