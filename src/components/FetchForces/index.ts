@@ -2,6 +2,7 @@ import ApiForces, { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 import { unitToForce, unitToLength } from "../UnitSelector";
+import { MemberPropsType } from "../MemberPropertiesForm";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
@@ -16,7 +17,9 @@ export const FetchForces = (
   nWeb: number,
   forces: number[][],
   trussType?: string,
-  unitType?: string
+  unitType?: string,
+  eMod?: MemberPropsType,
+  aCross?: MemberPropsType
 ): Promise<FetchForcesObject> => {
   const request_dict = {
     span: span,
@@ -24,6 +27,8 @@ export const FetchForces = (
     nWeb: nWeb,
     forces: forces,
     trussType: trussType,
+    eMod: eMod,
+    aCross: aCross,
   } as ApiGeometryGlobal;
 
   // https://encompapp.com/

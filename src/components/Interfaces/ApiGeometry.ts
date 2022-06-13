@@ -1,3 +1,5 @@
+import { MemberPropsType } from "../MemberPropertiesForm";
+
 export default interface ApiGeometry {
   nodes: Nodes;
   members: Members;
@@ -31,4 +33,6 @@ export interface ApiGeometryGlobal {
   height: number;
   nWeb: number;
   trussType?: string;
+  eMod?: MemberPropsType;
+  aCross?: MemberPropsType;
 }

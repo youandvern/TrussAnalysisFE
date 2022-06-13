@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid, Tooltip, Typography } from "@mui/material/";
+import { Grid, Typography } from "@mui/material/";
 import "./style.css";
 import NumInput from "../NumInput";
 import { unitToInputArea, unitToInputStress } from "../UnitSelector";

@@ -8,14 +8,26 @@ import "./style.css";
 import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
 import EndNodeSymbol from "./images/EndNodeSymbol.png";
 import MemberDirectionSymbol from "./images/MemberDirectionSymbol.png";
+import { MemberPropsType } from "../MemberPropertiesForm";
 import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
 import StartNodeSymbol from "./images/StartNodeSymbol.png";
-import { unitToLength, unitToForce, unitToCalcStress } from "../UnitSelector";
+import {
+  unitToLength,
+  unitToInputLength,
+  unitToForce,
+  unitToInputStress,
+  unitToInputArea,
+  unitToAreaFactorInputToCalc,
+  unitToStressFactorInputToCalc,
+} from "../UnitSelector";
 
 // expected properties given to Labeled Switch
 interface CalcReportProps {
   geometryProps: GeometryProps;
   memberForces: ApiForcesParsed;
+  areaProps: MemberPropsType;
+  elasticModulusProps: MemberPropsType;
+  memberPropsDefined: boolean;
   unitType?: string;
 }
 
@@ -28,6 +40,12 @@ const arrayToMatrix = (array: any[]) => {
     matrix.push([j / 2, matrixNumTruncator(array[j]), matrixNumTruncator(array[j + 1])]);
   }
   return matrix;
+};
+
+const memberKeyToType = {
+  top: "Top Chord",
+  bot: "Bottom Chord",
+  web: "Web Members",
 };
 
 const caption = (text: string) => (
@@ -81,9 +99,13 @@ const trigMatrixArray = [
 export default function CalculationReport({
   geometryProps,
   memberForces,
+  areaProps,
+  elasticModulusProps,
+  memberPropsDefined,
   unitType,
 }: CalcReportProps) {
   const lengthUnit = unitToLength(unitType);
+  const inputLengthUnit = unitToInputLength(unitType);
   const forceUnit = unitToForce(unitType);
   const nodeSizeEst =
     Math.max(geometryProps.globalGeometry.height * 3, geometryProps.globalGeometry.span) / 100;
@@ -98,7 +120,13 @@ export default function CalculationReport({
   const member0Length = memberForces.memberForces[0][2];
   const factoredK0 = memberForces.member0StiffnessMatrix.map((row) =>
     row.map((cell) =>
-      matrixNumTruncator((cell * member0Length) / (memberForces.globalA * memberForces.globalE))
+      matrixNumTruncator(
+        (cell * member0Length) /
+          (unitToAreaFactorInputToCalc(unitType) *
+            areaProps.top *
+            unitToStressFactorInputToCalc(unitType) *
+            elasticModulusProps.top)
+      )
     )
   );
 
@@ -116,15 +144,14 @@ export default function CalculationReport({
       <Typography variant="subtitle1" color="primary" sx={{ fontWeight: "bold" }} gutterBottom>
         Powered by Encomp
       </Typography>
-
       <h3 className="no-break">1. Truss Geometry</h3>
       <p>
         The overall configuration of the 2-dimensional truss is shown in Figure 1. The specific node
         and member configurations are also summarized in Table 1 and Table 2 below.
       </p>
       <p>
-        The total span of the truss is {geometryProps.globalGeometry.height} {lengthUnit} and
-        overall height of the truss is {geometryProps.globalGeometry.span} {lengthUnit}.
+        The total span of the truss is {geometryProps.globalGeometry.span} {lengthUnit} and overall
+        height of the truss is {geometryProps.globalGeometry.height} {lengthUnit}.
       </p>
       {TrussGraph({
         ...geometryProps,
@@ -152,13 +179,11 @@ export default function CalculationReport({
         ])}
       />
       {caption("Table 1: Structure node geometry")}
-
       <DataTableSimple
         headerList={memberForces.memberForcesHeaders.slice(0, 3)}
         dataList={memberForces.memberForces.map((memForce) => memForce.slice(0, 3))}
       />
       {caption("Table 2: Structure member geometry")}
-
       <h3>2. Applied Loading to Nodes</h3>
       <p>
         The loads applied to this truss structure are represented in Figure 2 and summarized in
@@ -189,7 +214,6 @@ export default function CalculationReport({
         }
       />
       {caption("Table 3: Applied loading to nodes")}
-
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
       <p>
         With the truss geometry and loading defined above, the member forces and deflections are
@@ -197,7 +221,6 @@ export default function CalculationReport({
         elastically and have sufficient strength at connections to transfer the required load to the
         member.
       </p>
-
       <h4>3.1 Member Stiffness Matrix</h4>
       <p>
         First, each member stiffness matrix is composed in the global coordinate system. For truss
@@ -255,12 +278,30 @@ export default function CalculationReport({
         <span>E </span> <ArrowForwardIcon />
         <span> Member material modulus of elasticity</span>
       </div>
-      <p>
-        For member axial demand analysis of a determinate truss, A and E may be set equal to any
-        constant for all members. In this analaysis, A has been set to {memberForces.globalA}{" "}
-        {lengthUnit}
-        <sup>2</sup> and E has been set to {memberForces.globalE} {unitToCalcStress(unitType)}.
-      </p>
+      {!memberPropsDefined ? (
+        <p>
+          For member axial demand analysis of a determinate truss, A and E may be set equal to any
+          constant for all members. In this analaysis, A has been set to {areaProps.top}{" "}
+          {inputLengthUnit} <sup>2</sup> and E has been set to {elasticModulusProps.top}{" "}
+          {unitToInputStress(unitType)}.
+        </p>
+      ) : (
+        <>
+          <p>In this analaysis, A and E have been set to the following values:</p>
+          <DataTableSimple
+            headerList={[
+              "Member Type",
+              `Cross-sectional Area (${unitToInputArea(unitType)})`,
+              `Elastic Modulus (${unitToInputStress(unitType)})`,
+            ]}
+            dataList={Object.keys(memberKeyToType).map((key) => [
+              memberKeyToType[key as keyof typeof memberKeyToType],
+              areaProps[key as keyof MemberPropsType],
+              elasticModulusProps[key as keyof MemberPropsType],
+            ])}
+          />
+        </>
+      )}
       <p>For simplicity in this general example, the following constants are calculated:</p>
       <div className="equation-div">
         <p>c=cosθ</p>
@@ -284,15 +325,14 @@ export default function CalculationReport({
           </span>
           {fraction(
             <span>
-              {memberForces.globalA} {lengthUnit} <sup>2</sup> * {memberForces.globalE}{" "}
-              {unitToCalcStress(unitType)}
+              {areaProps.top} {inputLengthUnit} <sup>2</sup> * {elasticModulusProps.top}{" "}
+              {unitToInputStress(unitType)}
             </span>,
             member0Length.toPrecision(3) + lengthUnit
           )}
           {matrix(factoredK0)}
         </div>
       </div>
-
       <h4>3.2 Global Structure Stiffness Matrix</h4>
       <p>
         All of the member stiffness matrices will be combined to form the global structure stiffness
@@ -305,7 +345,6 @@ export default function CalculationReport({
       </p>
       {matrix(kFull, true)}
       {caption("Structure Stiffness Matrix, K")}
-
       <h4>3.3 Reduced Structure Stiffness Matrix</h4>
       <p>
         With the reactions at the structure supports being unknown, the structure stiffness matrix
@@ -314,7 +353,6 @@ export default function CalculationReport({
       </p>
       {matrix(kReduced, true)}
       {caption("Reduced Structure Stiffness Matrix")}
-
       <h4>3.4 Reduced structure force matrix</h4>
       <p>
         Given the loads applied to the structure, as described in Table 3, the global force matrix,
@@ -326,7 +364,6 @@ export default function CalculationReport({
       </p>
       {matrix(fReduced, true)}
       {caption("Structural Load Matrix (reduced)")}
-
       <h4>3.5 Analysis for global displacements</h4>
       <p>
         The global nodal displacements are calculated by inverting the reduced stiffness matrix and
@@ -345,7 +382,6 @@ export default function CalculationReport({
         dataList={arrayToMatrix(memberForces.displacements)}
       />
       {caption("Table 4: Structure node displacements")}
-
       <h4>3.6 Calculate member axial demands</h4>
       <p>
         Using the relative displacements of each member's start and end nodes along with a

@@ -34,7 +34,13 @@ import LabeledSwitch from "../LabeledSwitch";
 import TrussStyleSelector, { TRUSS_TYPES } from "../TrussStyleSelector";
 import CalculationReport from "../CalculationReport";
 import { Query2dNumberArray } from "./Query2dNumberArray";
-import UnitSelector, { US_UNIT, unitToForce, unitToLength } from "../UnitSelector";
+import UnitSelector, {
+  US_UNIT,
+  unitToForce,
+  unitToLength,
+  unitToAreaFactorInputToCalc,
+  unitToStressFactorInputToCalc,
+} from "../UnitSelector";
 
 const debounce = require("lodash.debounce");
 
@@ -58,6 +64,13 @@ const queryToMemberProps = (
     top: objectVal?.top || defaultVal,
     bot: objectVal?.bot || defaultVal,
     web: objectVal?.web || defaultVal,
+  } as MemberPropsType);
+
+const inputPropsToCalcProps = (conversionFactor: number, props: MemberPropsType) =>
+  ({
+    top: conversionFactor * props.top,
+    bot: conversionFactor * props.bot,
+    web: conversionFactor * props.web,
   } as MemberPropsType);
 
 const printPdf = () => {
@@ -182,7 +195,15 @@ export default function TrussForm() {
       nWeb || DEFAULT_NWEB,
       forcesCorrected || DEFAULT_FORCES,
       trussType || DEFAULT_TRUSS_TYPE,
-      unitType
+      unitType,
+      inputPropsToCalcProps(
+        unitToStressFactorInputToCalc(unitType),
+        queryToMemberProps(DEFAULT_E, elasticModulusProps)
+      ),
+      inputPropsToCalcProps(
+        unitToAreaFactorInputToCalc(unitType),
+        queryToMemberProps(DEFAULT_A, areaProps)
+      )
     ).then((result) => {
       // Get spread of forces for color calculations
       let max = result.data.memberForces[0][3];
@@ -206,7 +227,18 @@ export default function TrussForm() {
       setShowMemberForces(result.show);
       setMemberForces(result.data);
     });
-  }, [span, height, nWeb, forces, geometry?.members, trussType, unitType, DEFAULT_FORCES]);
+  }, [
+    span,
+    height,
+    nWeb,
+    forces,
+    geometry?.members,
+    trussType,
+    unitType,
+    areaProps,
+    elasticModulusProps,
+    DEFAULT_FORCES,
+  ]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -352,7 +384,7 @@ export default function TrussForm() {
     setShowMemberForces(false);
     setMemberForcesSummary(undefined);
     handleHideCalculations();
-  }, [span, height, nWeb, trussType, unitType]);
+  }, [span, height, nWeb, trussType, unitType, elasticModulusProps, areaProps]);
 
   return (
     <>
@@ -581,6 +613,9 @@ export default function TrussForm() {
               nodeForces: forceArrows,
             }}
             memberForces={memberForces}
+            areaProps={queryToMemberProps(DEFAULT_A, areaProps)}
+            elasticModulusProps={queryToMemberProps(DEFAULT_E, elasticModulusProps)}
+            memberPropsDefined={true}
             unitType={unitType}
           />
         )}
