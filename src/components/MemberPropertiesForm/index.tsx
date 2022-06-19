@@ -1,8 +1,9 @@
 import React from "react";
-import { Grid, Typography } from "@mui/material/";
+import { Checkbox, FormControlLabel, FormGroup, Grid, Typography } from "@mui/material/";
 import "./style.css";
 import NumInput from "../NumInput";
 import { unitToInputArea, unitToInputStress } from "../UnitSelector";
+import { GLOBAL_THEME } from "../../App";
 
 const AREA_LABEL = "Member Area";
 const AREA_TOOLTIP = "Cross-sectional Area, A";
@@ -19,6 +20,8 @@ export interface MemberPropsType {
 
 // expected component properties
 interface MemberPropertiesProps {
+  useDefault: boolean;
+  setUseDefault: (event: React.ChangeEvent<HTMLInputElement>) => void;
   areaProps: MemberPropsType;
   setAreaProps: (
     memberType: string,
@@ -34,16 +37,31 @@ interface MemberPropertiesProps {
 
 // component for changing member properties
 export default function MemberPropertiesForm({
+  useDefault,
+  setUseDefault,
   areaProps,
   setAreaProps,
   eModulusProps,
   setEModProps,
   unitType,
 }: MemberPropertiesProps) {
+  const textColor = useDefault
+    ? GLOBAL_THEME.palette.text.disabled
+    : GLOBAL_THEME.palette.text.primary;
   return (
     <Grid container spacing={2} rowSpacing={3}>
+      <Grid item xs={12}>
+        <FormGroup className="form-right-align">
+          <FormControlLabel
+            control={<Checkbox checked={useDefault} onChange={setUseDefault} />}
+            label="Use Default Properties (Force analysis only)"
+          />
+        </FormGroup>
+      </Grid>
       <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label">Top Chord:</Typography>
+        <Typography className="mem-prop-label" sx={{ color: textColor }}>
+          Top Chord:
+        </Typography>
       </Grid>
       <Grid item xs={4.5}>
         <NumInput
@@ -54,6 +72,7 @@ export default function MemberPropertiesForm({
           toolTip={AREA_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
       <Grid item xs={4.5}>
@@ -65,11 +84,14 @@ export default function MemberPropertiesForm({
           toolTip={ELASTIC_MODULUS_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
 
       <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label">Web:</Typography>
+        <Typography className="mem-prop-label" sx={{ color: textColor }}>
+          Web:
+        </Typography>
       </Grid>
       <Grid item xs={4.5}>
         <NumInput
@@ -80,6 +102,7 @@ export default function MemberPropertiesForm({
           toolTip={AREA_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
       <Grid item xs={4.5}>
@@ -91,11 +114,14 @@ export default function MemberPropertiesForm({
           toolTip={ELASTIC_MODULUS_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
 
       <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label">Bottom Chord:</Typography>
+        <Typography className="mem-prop-label" sx={{ color: textColor }}>
+          Bottom Chord:
+        </Typography>
       </Grid>
       <Grid item xs={4.5}>
         <NumInput
@@ -106,6 +132,7 @@ export default function MemberPropertiesForm({
           toolTip={AREA_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
       <Grid item xs={4.5}>
@@ -117,6 +144,7 @@ export default function MemberPropertiesForm({
           toolTip={ELASTIC_MODULUS_TOOLTIP}
           min={0}
           max={MAX_E}
+          disabled={useDefault}
         />
       </Grid>
     </Grid>

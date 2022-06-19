@@ -27,7 +27,7 @@ interface CalcReportProps {
   memberForces: ApiForcesParsed;
   areaProps: MemberPropsType;
   elasticModulusProps: MemberPropsType;
-  memberPropsDefined: boolean;
+  useDefaultMemberProps: boolean;
   unitType?: string;
 }
 
@@ -101,7 +101,7 @@ export default function CalculationReport({
   memberForces,
   areaProps,
   elasticModulusProps,
-  memberPropsDefined,
+  useDefaultMemberProps,
   unitType,
 }: CalcReportProps) {
   const lengthUnit = unitToLength(unitType);
@@ -187,7 +187,7 @@ export default function CalculationReport({
       <h3>2. Applied Loading to Nodes</h3>
       <p>
         The loads applied to this truss structure are represented in Figure 2 and summarized in
-        detail below in Table 3. Note that if a node is not listed in Table 3, no loads have been
+        detail below in Table 3. Note that if a node is omitted from Table 3, no loads have been
         applied to it.
       </p>
       {TrussGraph({
@@ -278,7 +278,7 @@ export default function CalculationReport({
         <span>E </span> <ArrowForwardIcon />
         <span> Member material modulus of elasticity</span>
       </div>
-      {!memberPropsDefined ? (
+      {useDefaultMemberProps ? (
         <p>
           For member axial demand analysis of a determinate truss, A and E may be set equal to any
           constant for all members. In this analaysis, A has been set to {areaProps.top}{" "}
@@ -369,14 +369,21 @@ export default function CalculationReport({
         The global nodal displacements are calculated by inverting the reduced stiffness matrix and
         multiplying it with the reduced structure force matrix.
       </p>
+      {useDefaultMemberProps && (
+        <p>
+          **If member cross-sectional areas and material properties are not representative of the
+          real-life truss elements, each node displacement is only of value in comparison to each of
+          the others. These relative displacements are used to calculate the internal member forces
+          in the determinate truss but will not necessarily be representative of the actual
+          displacements of the truss.
+        </p>
+      )}
+
       <p>
-        If member cross-sectional areas and material properties are not representative of the
-        real-life truss elements, the node displacements are only of value in comparison to each of
-        the others. These relative displacements are used to calculate the internal member forces in
-        the determinate truss but will not necessarily be equal to the actual displacements of the
-        truss.
+        The resulting displacement at each node along with known support displacements are given
+        below:
       </p>
-      <p>The resulting displacements along with known support displacements are given below: </p>
+
       <DataTableSimple
         headerList={["Node ID", `Δx (${lengthUnit})`, `Δy (${lengthUnit})`]}
         dataList={arrayToMatrix(memberForces.displacements)}

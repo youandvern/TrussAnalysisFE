@@ -1,6 +1,12 @@
 import React, { useCallback, useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
-import { useQueryParam, NumberParam, StringParam, NumericObjectParam } from "use-query-params";
+import {
+  useQueryParam,
+  NumberParam,
+  StringParam,
+  NumericObjectParam,
+  BooleanParam,
+} from "use-query-params";
 import "./style.css";
 
 import {
@@ -50,6 +56,7 @@ const DEFAULT_NWEB = 1;
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
 const DEFAULT_A = 5;
 const DEFAULT_E = 29000;
+const DEFAULT_USE_DEFAULT_MEMBER = true;
 
 const queryToMemberProps = (
   defaultVal: number,
@@ -101,6 +108,7 @@ export default function TrussForm() {
   const [trussType = DEFAULT_TRUSS_TYPE, setTrussType] = useQueryParam("trussType", StringParam);
   const [elasticModulusProps, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
   const [areaProps, setAreaProps] = useQueryParam("area", NumericObjectParam);
+  const [useDefaultMember, setUseDefaultMember] = useQueryParam("defaultProps", BooleanParam);
 
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
@@ -330,6 +338,15 @@ export default function TrussForm() {
     showCalculationsDiv();
   };
 
+  const handleUseDefaultMember = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = event?.target?.checked;
+    setUseDefaultMember(checked ? undefined : false);
+    if (checked) {
+      setElasticModulusProps(undefined);
+      setAreaProps(undefined);
+    }
+  };
+
   // nNodes is 0 on initial render, then geometry is fetched for the first time and forces would be reset.
   // If forces are given in URL then we don't want to reset these forces after the initial render, only afterwards.
   const geometryFetchCount = useRef(0);
@@ -540,6 +557,10 @@ export default function TrussForm() {
                   </AccordionSummary>
                   <AccordionDetails>
                     <MemberPropertiesForm
+                      useDefault={
+                        useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : useDefaultMember
+                      }
+                      setUseDefault={handleUseDefaultMember}
                       areaProps={queryToMemberProps(DEFAULT_A, areaProps)}
                       setAreaProps={handleSetArea}
                       eModulusProps={queryToMemberProps(DEFAULT_E, elasticModulusProps)}
@@ -615,7 +636,7 @@ export default function TrussForm() {
             memberForces={memberForces}
             areaProps={queryToMemberProps(DEFAULT_A, areaProps)}
             elasticModulusProps={queryToMemberProps(DEFAULT_E, elasticModulusProps)}
-            memberPropsDefined={true}
+            useDefaultMemberProps={useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : false}
             unitType={unitType}
           />
         )}

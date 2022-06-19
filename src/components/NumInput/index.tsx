@@ -12,6 +12,7 @@ interface NumProps {
   min?: number;
   max?: number;
   step?: number;
+  disabled?: boolean;
 }
 
 // typical number input for concrete beam design form
@@ -24,11 +25,12 @@ export default function NumInput({
   min = 0,
   max = 10,
   step = 1,
+  disabled = false,
 }: NumProps) {
   return (
     // outlined group of label and input
-    <Tooltip title={toolTip || ""} followCursor>
-      <FormControl fullWidth variant="outlined">
+    <Tooltip title={toolTip || ""} followCursor enterDelay={700}>
+      <FormControl fullWidth variant="outlined" disabled={disabled}>
         <InputLabel>{label}</InputLabel>
         <OutlinedInput
           label={label}
