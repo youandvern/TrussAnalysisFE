@@ -129,21 +129,12 @@ export default function TrussForm() {
   };
   const DEFAULT_FORCES = useMemo(() => generateForces(nNodes), [nNodes]);
 
-  const generateForceArrows = (nForces: number) => {
-    let forceArrows = {} as NodeForcesSimple;
-    for (let i = 0; i < nForces; i++) {
-      forceArrows[i.toString()] = { fx: 0, fy: 0 } as NodeForceSimple;
-    }
-    return forceArrows;
-  };
-
   // const [forces, setForces] = useState(generateForces(nNodes));
   const [forces, setForces] = useQueryParam("zforces", Query2dNumberArray);
 
   const [showForces, setShowForces] = useState(false);
   const [showSections, setShowSections] = useState(false);
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
-  const [forceArrows, setForceArrows] = useState(generateForceArrows(nNodes));
   const setTopForcesForm = useRef(null);
   const setBotForcesForm = useRef(null);
 
@@ -162,34 +153,11 @@ export default function TrussForm() {
         return rowArray;
       })
     );
-
-    updateForceArrows(
-      row.toString(),
-      col === 1 ? +e.target.value : undefined,
-      col === 2 ? +e.target.value : undefined
-    );
   };
 
   const resetForces = useCallback(() => {
-    setForceArrows(generateForceArrows(nNodes));
     setForces(undefined);
-  }, [nNodes, setForces]);
-
-  const updateForceArrows = (nodeId: string, fx?: number, fy?: number) => {
-    setForceArrows((oldForceArrows) => {
-      let newForce = oldForceArrows[nodeId];
-      const newForceArrows = { ...oldForceArrows };
-      if (fx != null) {
-        newForce = { ...newForce, fx: fx };
-      }
-      if (fy != null) {
-        newForce = { ...newForce, fy: fy };
-      }
-
-      newForceArrows[nodeId] = newForce;
-      return newForceArrows;
-    });
-  };
+  }, [nNodes]);
 
   const [showMemberForces, setShowMemberForces] = useState(false);
   const [memberForces, setMemberForces] = useState(emptyApiForcesParsed);
@@ -302,7 +270,6 @@ export default function TrussForm() {
           return rowArray;
         })
       );
-      nodeIds.forEach((nodeId) => updateForceArrows(nodeId.toString(), fx, fy));
     } else {
       console.log("Error: nodes not found.");
     }
@@ -449,7 +416,7 @@ export default function TrussForm() {
                 showForceArrows={showForceArrows}
                 showAxes={true}
                 memberForcesSummary={memberForcesSummary}
-                nodeForces={forceArrows}
+                nodeForces={forces || DEFAULT_FORCES}
               />
             )}
           </Grid>
@@ -466,7 +433,6 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-
               <Grid item xs={3}>
                 <NumInput
                   label="Truss Height"
@@ -478,7 +444,6 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-
               <Grid item xs={6}>
                 <NumSlider
                   label="Number of Web Bays (per side):"
@@ -489,7 +454,6 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-
               <Grid item xs={8}>
                 <Accordion
                   expanded={showForces}
@@ -570,18 +534,10 @@ export default function TrussForm() {
                   </AccordionDetails>
                 </Accordion>
               </Grid>
-              <Grid item xs={4}>
+              <Grid item xs={4} className="stacked-buttons">
                 <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
                   Calculate Forces
                 </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <MemberForceResults
-                  showResult={showMemberForces}
-                  memberForceResults={memberForces}
-                />
-              </Grid>
-              <Grid item xs={8}>
                 <Button
                   variant="outlined"
                   fullWidth
@@ -591,30 +547,25 @@ export default function TrussForm() {
                 >
                   Print Calculation Report
                 </Button>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  color="primary"
+                  onClick={hideCalculations ? handleShowCalculations : handleHideCalculations}
+                  disabled={!showMemberForces}
+                >
+                  {hideCalculations ? "Show Calculations" : "Hide Calculations"}
+                </Button>
               </Grid>
-              <Grid item xs={4}>
-                {hideCalculations ? (
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    color="primary"
-                    onClick={handleShowCalculations}
-                    disabled={!showMemberForces}
-                  >
-                    Show Calculations
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    color="primary"
-                    onClick={handleHideCalculations}
-                    disabled={!showMemberForces}
-                  >
-                    Hide Calculations
-                  </Button>
-                )}
-              </Grid>
+
+              {!hideCalculations || (
+                <Grid item xs={12}>
+                  <MemberForceResults
+                    showResult={showMemberForces}
+                    memberForceResults={memberForces}
+                  />
+                </Grid>
+              )}
             </Grid>
           </Grid>
         </Grid>
@@ -631,7 +582,7 @@ export default function TrussForm() {
               showMemberLabels: showMemberLabels,
               showForceArrows: showForceArrows,
               memberForcesSummary: memberForcesSummary,
-              nodeForces: forceArrows,
+              nodeForces: forces || DEFAULT_FORCES,
             }}
             memberForces={memberForces}
             areaProps={queryToMemberProps(DEFAULT_A, areaProps)}

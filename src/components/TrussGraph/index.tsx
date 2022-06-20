@@ -4,7 +4,7 @@ import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react
 
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { MemberForcesSummary, NodeForcesSimple } from "../Interfaces/ApiForces";
+import { MemberForcesSummary } from "../Interfaces/ApiForces";
 import { GLOBAL_THEME } from "../../App";
 
 export interface GeometryProps {
@@ -16,7 +16,7 @@ export interface GeometryProps {
   showMemberLabels: boolean;
   showForceArrows: boolean;
   showAxes?: boolean;
-  nodeForces?: NodeForcesSimple;
+  nodeForces?: number[][];
   memberForcesSummary?: MemberForcesSummary;
   keySeed?: string;
 }
@@ -268,13 +268,13 @@ export default function TrussGraph({
         })}
 
         {Object.entries(trussGeometry.nodes).map(([iNode, node]) => {
-          const thisNodeForce = showForceArrows && nodeForces && nodeForces[iNode];
+          const thisNodeForce = showForceArrows && nodeForces && nodeForces[+iNode];
           return (
             <>
               {node.fixity === "pin" && pinMarker(node.x, node.y - nodeSize / 2, nodeSize)}
               {node.fixity === "roller" && rollerMarker(node.x, node.y - nodeSize, nodeSize)}
               {thisNodeForce &&
-                forceArrows(node.x, -node.y, thisNodeForce.fx, thisNodeForce.fy, 4 * nodeSize)}
+                forceArrows(node.x, -node.y, thisNodeForce[1], thisNodeForce[2], 4 * nodeSize)}
               <Circle
                 x={node.x}
                 y={-node.y}

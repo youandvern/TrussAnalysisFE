@@ -205,13 +205,7 @@ export default function CalculationReport({
       )}
       <DataTableSimple
         headerList={["Node ID", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
-        dataList={
-          geometryProps.nodeForces
-            ? Object.entries(geometryProps.nodeForces)
-                .filter(([id, forces]) => forces.fy !== 0 || forces.fx !== 0)
-                .map(([id, forces]) => [id, forces.fx, -forces.fy])
-            : [[0, 0, 0]]
-        }
+        dataList={geometryProps.nodeForces || [[0, 0, 0]]}
       />
       {caption("Table 3: Applied loading to nodes")}
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>

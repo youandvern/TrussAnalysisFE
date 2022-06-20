@@ -11,3 +11,7 @@
     display: block;
   }
 }
+
+.stacked-buttons button {
+  margin-bottom: 0.5em;
+}
