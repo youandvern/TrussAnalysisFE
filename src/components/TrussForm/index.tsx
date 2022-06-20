@@ -23,12 +23,7 @@ import NumInput from "../NumInput";
 import NumSlider from "../NumSlider";
 import TrussGraph from "../TrussGraph";
 import { FetchGeometry } from "../FetchGeometry";
-import {
-  emptyApiForcesParsed,
-  MemberForcesSummary,
-  NodeForceSimple,
-  NodeForcesSimple,
-} from "../Interfaces/ApiForces";
+import { emptyApiForcesParsed, MemberForcesSummary } from "../Interfaces/ApiForces";
 import DataTable from "../DataTableControlled";
 import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { FetchForces } from "../FetchForces";
@@ -157,7 +152,8 @@ export default function TrussForm() {
 
   const resetForces = useCallback(() => {
     setForces(undefined);
-  }, [nNodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nNodes, setForces]);
 
   const [showMemberForces, setShowMemberForces] = useState(false);
   const [memberForces, setMemberForces] = useState(emptyApiForcesParsed);
@@ -330,7 +326,7 @@ export default function TrussForm() {
             setGeometry(result.data);
             geometryFetchCount.current++;
           }),
-        500
+        300
       ),
     []
   );
