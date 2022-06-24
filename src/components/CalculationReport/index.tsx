@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Theme, Typography, useMediaQuery } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import React from "react";
 import DataTableSimple from "../DataTableSimple";
@@ -138,6 +138,8 @@ export default function CalculationReport({
   );
   const fReduced = [memberForces.reducedForceMatrix.map((val) => matrixNumTruncator(val))];
 
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+
   return (
     <div className="calc-report-container" id="calc-report-container">
       <h1>Truss Analysis Calculations</h1>
@@ -205,7 +207,11 @@ export default function CalculationReport({
       )}
       <DataTableSimple
         headerList={["Node ID", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
-        dataList={geometryProps.nodeForces || [[0, 0, 0]]}
+        dataList={
+          geometryProps.nodeForces?.filter(
+            (forceRow) => forceRow[1] !== 0 || forceRow[2] !== 0
+          ) || [[0, 0, 0]]
+        }
       />
       {caption("Table 3: Applied loading to nodes")}
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
@@ -312,7 +318,7 @@ export default function CalculationReport({
         </div>
       </div>
       <p>For example, the stiffness matrix for member 0 is:</p>
-      <div className="equation-div">
+      <div className={smallScreen ? "equation-div small-equation" : "equation-div"}>
         <div className="matrix-eq-div">
           <span>
             k <sub>0</sub> ={" "}

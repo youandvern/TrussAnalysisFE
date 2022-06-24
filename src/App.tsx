@@ -4,6 +4,15 @@ import { createTheme, ThemeProvider, Container } from "@mui/material";
 import TrussForm from "./components/TrussForm";
 
 const GLOBAL_THEME = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
   palette: {
     primary: {
       main: "#004aad",

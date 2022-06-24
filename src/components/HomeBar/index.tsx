@@ -14,7 +14,7 @@ export default function HomeBar() {
         <Grid item xs={8}>
           <Typography align="center">
             <a href="https://encompapp.com/">
-              <img src={ENCOMP} alt="Encomp Logo"></img>
+              <img src={ENCOMP} alt="Encomp Logo" className="main-logo"></img>
             </a>
           </Typography>
         </Grid>

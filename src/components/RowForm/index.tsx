@@ -27,7 +27,8 @@ export default function RowForm({
     <form ref={formRef}>
       <Grid
         container
-        spacing={1}
+        rowSpacing={1}
+        columnSpacing={2}
         sx={{
           borderBottom: 1,
           paddingBottom: "1em",
@@ -35,7 +36,7 @@ export default function RowForm({
           borderColor: "grey.600",
         }}
       >
-        <Grid item xs={4}>
+        <Grid item xs={12} sm={4}>
           <Button
             variant="outlined"
             fullWidth
@@ -46,10 +47,10 @@ export default function RowForm({
             {buttonTitle}
           </Button>
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6} sm={4}>
           <NumInput label={inputLabel1} unit={inputUnit1} />
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6} sm={4}>
           <NumInput label={inputLabel2} unit={inputUnit2} />
         </Grid>
       </Grid>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./style.css";
 import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
 
@@ -19,6 +19,7 @@ export interface GeometryProps {
   nodeForces?: number[][];
   memberForcesSummary?: MemberForcesSummary;
   keySeed?: string;
+  onRender?: () => void;
 }
 
 // Graph canvas to display truss
@@ -34,6 +35,7 @@ export default function TrussGraph({
   nodeForces,
   memberForcesSummary,
   keySeed = "0",
+  onRender,
 }: GeometryProps) {
   const trussHeight = globalGeometry.height;
   const trussWidth = globalGeometry.span;
@@ -228,6 +230,10 @@ export default function TrussGraph({
       </Label>
     );
   };
+
+  useEffect(() => {
+    if (onRender) onRender();
+  }, [onRender]);
 
   return (
     <Stage width={frameWidth} height={frameHeight} x={(frameWidth - sceneWidth * fscale) / 2}>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Checkbox, FormControlLabel, FormGroup, Grid, Typography } from "@mui/material/";
+import { Checkbox, FormControlLabel, FormGroup, FormLabel, Grid } from "@mui/material/";
 import "./style.css";
 import NumInput from "../NumInput";
 import { unitToInputArea, unitToInputStress } from "../UnitSelector";
@@ -48,9 +48,10 @@ export default function MemberPropertiesForm({
   const textColor = useDefault
     ? GLOBAL_THEME.palette.text.disabled
     : GLOBAL_THEME.palette.text.primary;
+
   return (
-    <Grid container spacing={2} rowSpacing={3}>
-      <Grid item xs={12}>
+    <Grid container columns={8} spacing={2} rowSpacing={3}>
+      <Grid item xs={8}>
         <FormGroup className="form-right-align">
           <FormControlLabel
             control={<Checkbox checked={useDefault} onChange={setUseDefault} />}
@@ -58,12 +59,10 @@ export default function MemberPropertiesForm({
           />
         </FormGroup>
       </Grid>
-      <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label" sx={{ color: textColor }}>
-          Top Chord:
-        </Typography>
+      <Grid item xs={8} sm={2}>
+        <FormLabel sx={{ color: textColor }}>Top Chord:</FormLabel>
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={AREA_LABEL}
           value={areaProps.top}
@@ -75,7 +74,7 @@ export default function MemberPropertiesForm({
           disabled={useDefault}
         />
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={ELASTIC_MODULUS_LABEL}
           value={eModulusProps.top}
@@ -88,12 +87,10 @@ export default function MemberPropertiesForm({
         />
       </Grid>
 
-      <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label" sx={{ color: textColor }}>
-          Web:
-        </Typography>
+      <Grid item xs={8} sm={2}>
+        <FormLabel sx={{ color: textColor }}>Web:</FormLabel>
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={AREA_LABEL}
           value={areaProps.web}
@@ -105,7 +102,7 @@ export default function MemberPropertiesForm({
           disabled={useDefault}
         />
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={ELASTIC_MODULUS_LABEL}
           value={eModulusProps.web}
@@ -118,12 +115,10 @@ export default function MemberPropertiesForm({
         />
       </Grid>
 
-      <Grid item xs={3} className="mem-prop-label-grid">
-        <Typography className="mem-prop-label" sx={{ color: textColor }}>
-          Bottom Chord:
-        </Typography>
+      <Grid item xs={8} sm={2}>
+        <FormLabel sx={{ color: textColor }}>Bottom Chord:</FormLabel>
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={AREA_LABEL}
           value={areaProps.bot}
@@ -135,7 +130,7 @@ export default function MemberPropertiesForm({
           disabled={useDefault}
         />
       </Grid>
-      <Grid item xs={4.5}>
+      <Grid item xs={4} sm={3}>
         <NumInput
           label={ELASTIC_MODULUS_LABEL}
           value={eModulusProps.bot}

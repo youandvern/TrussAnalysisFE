@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Container,
-} from "@mui/material/";
+import { FormLabel, RadioGroup, FormControlLabel, Radio, Container } from "@mui/material/";
 import { grey } from "@mui/material/colors";
 
 interface TrussType {
@@ -42,7 +35,7 @@ export default function TrussStyleSelector({ trussType, handleChange }: StyleSel
       />
     ));
   return (
-    <FormControl
+    <Container
       sx={{
         width: "100%",
         color: grey[400],
@@ -70,6 +63,6 @@ export default function TrussStyleSelector({ trussType, handleChange }: StyleSel
           {groupedButtons(bridgeTypes)}
         </Container>
       </RadioGroup>
-    </FormControl>
+    </Container>
   );
 }

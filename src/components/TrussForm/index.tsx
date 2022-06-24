@@ -16,6 +16,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Button,
+  Container,
+  Box,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -107,11 +109,12 @@ export default function TrussForm() {
 
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
-  const [frameWidth, setFrameWidth] = useState(window.innerWidth / 2);
-  const [frameHeight, setFrameHeight] = useState(window.innerHeight / 2);
+  const [frameWidth, setFrameWidth] = useState(3);
+  const [frameHeight, setFrameHeight] = useState(1);
   const [unitType, setUnitType] = useState(US_UNIT);
   const forceUnit = unitToForce(unitType);
   const graphGridRef = useRef<HTMLDivElement>(null);
+  const [graphRendered, setGraphRendered] = useState(false);
 
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
@@ -211,6 +214,8 @@ export default function TrussForm() {
     elasticModulusProps,
     DEFAULT_FORCES,
   ]);
+
+  const onRenderGraph = () => setGraphRendered(true);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(+event?.target?.value);
@@ -344,8 +349,9 @@ export default function TrussForm() {
   useEffect(() => {
     function resizeGraph() {
       if (graphGridRef.current !== null) {
-        setFrameWidth(graphGridRef.current.offsetWidth);
-        setFrameHeight(graphGridRef.current.offsetWidth / 3);
+        const width = Math.max(275, graphGridRef.current.offsetWidth);
+        setFrameWidth(width);
+        setFrameHeight(width / 3);
       }
     }
 
@@ -357,7 +363,7 @@ export default function TrussForm() {
       window.removeEventListener("resize", resizeGraph);
       window.removeEventListener("load", resizeGraph);
     };
-  }, []);
+  }, [graphRendered]);
 
   // hide results if any input changes
   useEffect(() => {
@@ -369,56 +375,59 @@ export default function TrussForm() {
   return (
     <>
       <div className="not-calc-report">
-        <Grid container spacing={3}>
+        <Grid container columnSpacing={2} rowSpacing={3}>
           <Grid item xs={12}>
             <TrussStyleSelector
               trussType={trussType || DEFAULT_TRUSS_TYPE}
               handleChange={handleChangeTrussType}
             />
           </Grid>
-          <Grid item xs={3} ref={graphGridRef}>
+          <Grid item xs={6} sm={4} md={3}>
             <LabeledSwitch
               label="Node Labels:"
               checked={showNodeLabels}
               handleChange={handleShowNodeLabels}
             />
           </Grid>
-          <Grid item xs={3} ref={graphGridRef}>
+          <Grid item xs={6} sm={4} md={3}>
             <LabeledSwitch
               label="Member Labels:"
               checked={showMemberLabels}
               handleChange={handleShowMemberLabels}
             />
           </Grid>
-          <Grid item xs={3} ref={graphGridRef}>
+          <Grid item xs={6} sm={4} md={3}>
             <LabeledSwitch
               label="Force Arrows:"
               checked={showForceArrows}
               handleChange={handleShowForceArrows}
             />
           </Grid>
-          <Grid item xs={3} ref={graphGridRef}>
+          <Grid item xs={6} sm={12} md={3}>
             <UnitSelector unitType={unitType} handleChange={handleChangeUnitType} />
           </Grid>
-          <Grid item xs={12} ref={graphGridRef}>
+          <Grid item xs={12}>
             {geometry && (
-              <TrussGraph
-                globalGeometry={{ span, height, nWeb } as ApiGeometryGlobal}
-                trussGeometry={geometry}
-                frameWidth={frameWidth}
-                frameHeight={frameHeight}
-                showNodeLabels={showNodeLabels}
-                showMemberLabels={showMemberLabels}
-                showForceArrows={showForceArrows}
-                showAxes={true}
-                memberForcesSummary={memberForcesSummary}
-                nodeForces={forces || DEFAULT_FORCES}
-              />
+              <Box ref={graphGridRef}>
+                <TrussGraph
+                  globalGeometry={{ span, height, nWeb } as ApiGeometryGlobal}
+                  trussGeometry={geometry}
+                  frameWidth={frameWidth}
+                  frameHeight={frameHeight}
+                  showNodeLabels={showNodeLabels}
+                  showMemberLabels={showMemberLabels}
+                  showForceArrows={showForceArrows}
+                  showAxes={true}
+                  memberForcesSummary={memberForcesSummary}
+                  nodeForces={forces || DEFAULT_FORCES}
+                  onRender={onRenderGraph}
+                />
+              </Box>
             )}
           </Grid>
           <Grid item xs={12}>
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid item xs={6} sm={3}>
                 <NumInput
                   label="Truss Span"
                   value={span || DEFAULT_SPAN}
@@ -429,7 +438,7 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid item xs={6} sm={3}>
                 <NumInput
                   label="Truss Height"
                   value={height || DEFAULT_HEIGHT}
@@ -440,17 +449,20 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-              <Grid item xs={6}>
-                <NumSlider
-                  label="Number of Web Bays (per side):"
-                  value={nWeb || DEFAULT_NWEB}
-                  onChange={setNWeb}
-                  min={1}
-                  max={10}
-                  step={1}
-                />
+
+              <Grid item xs={12} sm={6}>
+                <Container>
+                  <NumSlider
+                    label="Number of Web Bays (per side):"
+                    value={nWeb || DEFAULT_NWEB}
+                    onChange={setNWeb}
+                    min={1}
+                    max={10}
+                    step={1}
+                  />
+                </Container>
               </Grid>
-              <Grid item xs={8}>
+              <Grid item xs={12} md={8}>
                 <Accordion
                   expanded={showForces}
                   onChange={(_e, expanded) => {
@@ -530,7 +542,7 @@ export default function TrussForm() {
                   </AccordionDetails>
                 </Accordion>
               </Grid>
-              <Grid item xs={4} className="stacked-buttons">
+              <Grid item xs={12} md={4} className="stacked-buttons">
                 <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
                   Calculate Forces
                 </Button>
