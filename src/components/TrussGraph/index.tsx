@@ -40,11 +40,12 @@ export default function TrussGraph({
   const trussHeight = globalGeometry.height;
   const trussWidth = globalGeometry.span;
   const nodeSize = Math.max(trussHeight * 3, trussWidth) / 100;
-  const border = nodeSize * 4;
-  const borderBot = nodeSize * 5;
+  const border = nodeSize * 5;
+  const borderBot = nodeSize * 6;
   const sceneHeight = trussHeight + border + borderBot;
   const sceneWidth = trussWidth + 2 * border;
   const fscale = Math.min(frameHeight / sceneHeight, frameWidth / sceneWidth);
+  const nodeSizeScaled = nodeSize * fscale;
 
   const forceArrows = (xp: number, yp: number, fx: number, fy: number, aSize: number) => {
     const xdir = fx < 0 ? -1 : 1;
@@ -237,19 +238,16 @@ export default function TrussGraph({
 
   return (
     <Stage width={frameWidth} height={frameHeight} x={(frameWidth - sceneWidth * fscale) / 2}>
-      <Layer
-        scale={{ x: fscale, y: fscale }}
-        x={border * fscale}
-        y={frameHeight - borderBot * fscale}
-      >
-        {showAxes && axes(0, frameHeight / fscale - 5 * nodeSize - border, 5 * nodeSize)}
+      <Layer x={border * fscale} y={frameHeight - borderBot * fscale}>
+        {showAxes &&
+          axes(0, frameHeight - 5 * nodeSizeScaled - border * fscale, 5 * nodeSizeScaled)}
 
         {Object.entries(trussGeometry.members).map(([iMember, member]) => {
           const points = {
-            x1: trussGeometry.nodes[member.start].x,
-            y1: trussGeometry.nodes[member.start].y,
-            x2: trussGeometry.nodes[member.end].x,
-            y2: trussGeometry.nodes[member.end].y,
+            x1: trussGeometry.nodes[member.start].x * fscale,
+            y1: trussGeometry.nodes[member.start].y * fscale,
+            x2: trussGeometry.nodes[member.end].x * fscale,
+            y2: trussGeometry.nodes[member.end].y * fscale,
           };
           return (
             <>
@@ -261,43 +259,47 @@ export default function TrussGraph({
                     ? member.color
                     : GLOBAL_THEME.palette.primary.main
                 }
-                strokeWidth={nodeSize}
+                strokeWidth={nodeSizeScaled}
                 fill={"red"}
-                width={nodeSize}
+                width={nodeSizeScaled}
                 fillEnabled
                 fillAfterStrokeEnabled
               />
               {showMemberLabels &&
-                memberLabel(points.x1, -points.y1, points.x2, -points.y2, iMember, nodeSize)}
+                memberLabel(points.x1, -points.y1, points.x2, -points.y2, iMember, nodeSizeScaled)}
             </>
           );
         })}
 
         {Object.entries(trussGeometry.nodes).map(([iNode, node]) => {
           const thisNodeForce = showForceArrows && nodeForces && nodeForces[+iNode];
+          const nodeX = node.x * fscale;
+          const nodeY = node.y * fscale;
           return (
             <>
-              {node.fixity === "pin" && pinMarker(node.x, node.y - nodeSize / 2, nodeSize)}
-              {node.fixity === "roller" && rollerMarker(node.x, node.y - nodeSize, nodeSize)}
+              {node.fixity === "pin" &&
+                pinMarker(nodeX, nodeY - nodeSizeScaled / 2, nodeSizeScaled)}
+              {node.fixity === "roller" &&
+                rollerMarker(nodeX, nodeY - nodeSizeScaled, nodeSizeScaled)}
               {thisNodeForce &&
-                forceArrows(node.x, -node.y, thisNodeForce[1], thisNodeForce[2], 4 * nodeSize)}
+                forceArrows(nodeX, -nodeY, thisNodeForce[1], thisNodeForce[2], 4 * nodeSizeScaled)}
               <Circle
-                x={node.x}
-                y={-node.y}
+                x={nodeX}
+                y={-nodeY}
                 fill="black"
-                radius={nodeSize}
+                radius={nodeSizeScaled}
                 key={`${keySeed}-node-${iNode}`}
               />
-              {showNodeLabels && nodeLabel(node.x, -1 * node.y, iNode, nodeSize)}
+              {showNodeLabels && nodeLabel(nodeX, -1 * nodeY, iNode, nodeSizeScaled)}
             </>
           );
         })}
 
         {memberForcesSummary &&
           forceScale(
-            trussWidth + 1 * nodeSize,
-            -(0.8 * frameHeight) / fscale,
-            (0.6 * frameHeight) / fscale,
+            trussWidth * fscale + 1 * nodeSizeScaled,
+            -(0.8 * frameHeight),
+            0.6 * frameHeight,
             memberForcesSummary.min,
             memberForcesSummary.max
           )}
