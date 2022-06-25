@@ -203,7 +203,7 @@ export default function TrussGraph({
   };
 
   const nodeLabel = (x: number, y: number, i: string, offSet: number) => {
-    const yOffset = y === 0 && !(x === 0 || x === trussWidth) ? offSet * -1 : offSet * 4;
+    const yOffset = y === 0 && !(x === 0 || x === trussWidth * fscale) ? offSet * -1 : offSet * 4;
     return (
       <Text
         x={x - offSet / 2 - offSet * (i.length - 1)}
