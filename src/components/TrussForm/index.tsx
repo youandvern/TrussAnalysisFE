@@ -18,6 +18,8 @@ import {
   Button,
   Container,
   Box,
+  useMediaQuery,
+  Theme,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -54,6 +56,7 @@ const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
 const DEFAULT_A = 5;
 const DEFAULT_E = 29000;
 const DEFAULT_USE_DEFAULT_MEMBER = true;
+const MAX_WIDTH_TRANSITION = 855;
 
 const queryToMemberProps = (
   defaultVal: number,
@@ -99,6 +102,7 @@ const hideCalculationsDiv = () => {
 
 // Form and controls for truss analysis tool
 export default function TrussForm() {
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down(MAX_WIDTH_TRANSITION));
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", NumberParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
   const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
@@ -109,8 +113,14 @@ export default function TrussForm() {
 
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
-  const [frameWidth, setFrameWidth] = useState(3);
-  const [frameHeight, setFrameHeight] = useState(1);
+
+  const [frameWidth, setFrameWidth] = useState(
+    smallScreen ? 0.92 * window.innerWidth : MAX_WIDTH_TRANSITION
+  );
+  const [frameHeight, setFrameHeight] = useState(
+    (smallScreen ? 0.92 * window.innerWidth : MAX_WIDTH_TRANSITION) / 3
+  );
+
   const [unitType, setUnitType] = useState(US_UNIT);
   const forceUnit = unitToForce(unitType);
   const graphGridRef = useRef<HTMLDivElement>(null);
