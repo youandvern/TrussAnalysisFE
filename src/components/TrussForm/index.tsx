@@ -161,10 +161,12 @@ export default function TrussForm() {
         return rowArray;
       })
     );
+    handleHideAllResults();
   };
 
   const resetForces = useCallback(() => {
     setForces(undefined);
+    handleHideAllResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nNodes, setForces]);
 
@@ -281,6 +283,7 @@ export default function TrussForm() {
           return rowArray;
         })
       );
+      handleHideAllResults();
     } else {
       console.log("Error: nodes not found.");
     }
@@ -323,6 +326,12 @@ export default function TrussForm() {
       setElasticModulusProps(undefined);
       setAreaProps(undefined);
     }
+  };
+
+  const handleHideAllResults = () => {
+    setShowMemberForces(false);
+    setMemberForcesSummary(undefined);
+    handleHideCalculations();
   };
 
   // nNodes is 0 on initial render, then geometry is fetched for the first time and forces would be reset.
@@ -377,9 +386,8 @@ export default function TrussForm() {
 
   // hide results if any input changes
   useEffect(() => {
-    setShowMemberForces(false);
-    setMemberForcesSummary(undefined);
-    handleHideCalculations();
+    handleHideAllResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [span, height, nWeb, trussType, unitType, elasticModulusProps, areaProps]);
 
   return (

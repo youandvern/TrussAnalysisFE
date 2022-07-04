@@ -208,9 +208,9 @@ export default function CalculationReport({
       <DataTableSimple
         headerList={["Node ID", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
         dataList={
-          geometryProps.nodeForces?.filter(
-            (forceRow) => forceRow[1] !== 0 || forceRow[2] !== 0
-          ) || [[0, 0, 0]]
+          geometryProps.nodeForces
+            ?.filter((forceRow) => forceRow[1] !== 0 || forceRow[2] !== 0)
+            .map((forces) => [forces[0], forces[1], -forces[2]]) || [[0, 0, 0]]
         }
       />
       {caption("Table 3: Applied loading to nodes")}
