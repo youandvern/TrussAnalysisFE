@@ -1,6 +1,10 @@
 import ApiGeometry from "../Interfaces/ApiGeometry";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 
+// https://api.encompapp.com
+// http://127.0.0.1:8000
+export const API_URL = "https://api.encompapp.com";
+
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
 interface FetchObject {
@@ -21,9 +25,6 @@ export const FetchGeometry = (
     trussType: trussType,
   } as ApiGeometryGlobal;
 
-  // https://encompapp.com/
-  // http://127.0.0.1:5000
-
   const fetchData = async () => {
     let show = false;
     let data = {
@@ -31,7 +32,7 @@ export const FetchGeometry = (
       members: { 1: { start: 2, end: 1, type: "chord" } },
     } as ApiGeometry;
 
-    const res = await fetch("https://encompapp.com/api/TrussGeometry", {
+    const res = await fetch(`${API_URL}/api/truss-analysis/geometry/`, {
       method: "POST",
       cache: "no-cache",
       headers: {

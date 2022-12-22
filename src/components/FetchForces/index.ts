@@ -3,6 +3,7 @@ import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 import { unitToForce, unitToLength } from "../UnitSelector";
 import { MemberPropsType } from "../MemberPropertiesForm";
+import { API_URL } from "../FetchGeometry";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
@@ -31,14 +32,11 @@ export const FetchForces = (
     aCross: aCross,
   } as ApiGeometryGlobal;
 
-  // https://encompapp.com/
-  // http://127.0.0.1:5000
-
   const fetchData = async () => {
     let show = false;
     let data = emptyApiForcesParsed;
 
-    const res = await fetch("https://encompapp.com/api/TrussForces", {
+    const res = await fetch(`${API_URL}/api/truss-analysis/analysis/`, {
       method: "POST",
       cache: "no-cache",
       headers: {
