@@ -50,6 +50,10 @@ div.centerdiv {
   margin-block-start: 0.5em;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 @media (min-width: 600px) {
   .container {
     padding-left: 30px;
