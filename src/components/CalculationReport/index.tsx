@@ -1,4 +1,4 @@
-import { Theme, Typography, useMediaQuery } from "@mui/material";
+import { Theme, Typography, useMediaQuery, styled } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import React from "react";
 import DataTableSimple from "../DataTableSimple";
@@ -47,6 +47,12 @@ const memberKeyToType = {
   bot: "Bottom Chord",
   web: "Web Members",
 };
+
+const StyledLink = styled("a")({
+  textDecoration: "none",
+  color: "inherit",
+  fontWeight: "bold",
+});
 
 const caption = (text: string) => (
   <Typography variant="caption" color="textSecondary" component="p" gutterBottom>
@@ -453,6 +459,13 @@ export default function CalculationReport({
         ])}
       />
       {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}
+
+      <Typography marginTop="3rem" textAlign="right">
+        Powered by{" "}
+        <StyledLink href="https://encompapp.com" target="_blank" rel="noopener noreferrer">
+          encompapp.com
+        </StyledLink>
+      </Typography>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Container, Grid, Typography, Link } from "@mui/material/";
 import HomeIcon from "@mui/icons-material/Home";
 import ENCOMP from "./ENCOMP.png";
 
-// Home bar with logo nad menu options
+// Home bar with logo
 export default function HomeBar() {
   return (
     <Container maxWidth="md" className="page-top-padding">

@@ -25,11 +25,11 @@ const GLOBAL_THEME = createTheme({
 
 function App() {
   return (
-    <Container maxWidth="md">
-      <ThemeProvider theme={GLOBAL_THEME}>
+    <ThemeProvider theme={GLOBAL_THEME}>
+      <Container maxWidth="md">
         <TrussForm />
-      </ThemeProvider>
-    </Container>
+      </Container>
+    </ThemeProvider>
   );
 }
 
