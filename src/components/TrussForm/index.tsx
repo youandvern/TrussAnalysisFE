@@ -46,6 +46,7 @@ import UnitSelector, {
   unitToAreaFactorInputToCalc,
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
+import CalculateOnEmailButton from "../CalculateOnEmailButton";
 
 const debounce = require("lodash.debounce");
 
@@ -561,9 +562,7 @@ export default function TrussForm() {
                 </Accordion>
               </Grid>
               <Grid item xs={12} md={4} className="stacked-buttons">
-                <Button variant="outlined" fullWidth color="primary" onClick={updateMemberForces}>
-                  Calculate Forces
-                </Button>
+                <CalculateOnEmailButton updateForces={updateMemberForces} />
                 <Button
                   variant="outlined"
                   fullWidth

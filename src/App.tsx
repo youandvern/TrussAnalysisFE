@@ -16,9 +16,19 @@ const GLOBAL_THEME = createTheme({
   palette: {
     primary: {
       main: "#004aad",
+      light: "#b3d4ff",
     },
     secondary: {
       main: "#faa92f",
+      light: "#fccc83",
+    },
+    success: {
+      main: "#00af54",
+      light: "#d2ffc8",
+    },
+    error: {
+      main: "#bf211e",
+      light: "#ffc8cb",
     },
   },
 });

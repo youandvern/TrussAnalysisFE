@@ -1,9 +1,8 @@
 import ApiGeometry from "../Interfaces/ApiGeometry";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 
-// https://api.encompapp.com
-// http://127.0.0.1:8000
 export const API_URL = "https://api.encompapp.com";
+// export const API_URL = "http://127.0.0.1:8000";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
