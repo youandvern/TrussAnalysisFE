@@ -1,8 +1,8 @@
 import ApiGeometry from "../Interfaces/ApiGeometry";
 import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
 
-export const API_URL = "https://api.encompapp.com";
-// export const API_URL = "http://127.0.0.1:8000";
+// export const API_URL = "https://api.encompapp.com";
+export const API_URL = "http://127.0.0.1:8000";
 
 // https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
 
@@ -15,12 +15,16 @@ export const FetchGeometry = (
   span: number,
   height: number,
   nWeb: number,
+  trussDepth?: number,
   trussType?: string
 ): Promise<FetchObject> => {
+  const depth = trussType === "ParallelChordRoofTruss" || "ScissorTruss" ? trussDepth : undefined;
+
   const request_dict = {
     span: span,
     height: height,
     nWeb: nWeb,
+    trussDepth: depth,
     trussType: trussType,
   } as ApiGeometryGlobal;
 

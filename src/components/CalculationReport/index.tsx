@@ -110,13 +110,15 @@ export default function CalculationReport({
   useDefaultMemberProps,
   unitType,
 }: CalcReportProps) {
+  const nodeHeights = Object.values(geometryProps.trussGeometry.nodes).map((n) => n.y);
+
   const lengthUnit = unitToLength(unitType);
   const inputLengthUnit = unitToInputLength(unitType);
   const forceUnit = unitToForce(unitType);
   const nodeSizeEst =
     Math.max(geometryProps.globalGeometry.height * 3, geometryProps.globalGeometry.span) / 100;
   const totalWidth = geometryProps.globalGeometry.span + 8 * nodeSizeEst;
-  const totalHeight = geometryProps.globalGeometry.height + 9 * nodeSizeEst;
+  const totalHeight = Math.max(...nodeHeights) - Math.min(...nodeHeights) + 9 * nodeSizeEst;
   const trussOnlyFrameHeight = Math.min(
     geometryProps.frameHeight,
     (geometryProps.frameWidth * totalHeight) / totalWidth

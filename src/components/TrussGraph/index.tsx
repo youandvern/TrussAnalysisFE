@@ -37,7 +37,9 @@ export default function TrussGraph({
   keySeed = "0",
   onRender,
 }: GeometryProps) {
-  const trussHeight = globalGeometry.height;
+  const nodeHeights = Object.values(trussGeometry.nodes).map((n) => n.y);
+
+  const trussHeight = Math.max(...nodeHeights) - Math.min(...nodeHeights);
   const trussWidth = globalGeometry.span;
   const nodeSize = Math.max(trussHeight * 3, trussWidth) / 100;
   const border = nodeSize * 5;

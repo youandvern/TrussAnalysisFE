@@ -52,12 +52,16 @@ const debounce = require("lodash.debounce");
 
 const DEFAULT_SPAN = 16;
 const DEFAULT_HEIGHT = 4;
+const DEFAULT_DEPTH = 1.5;
 const DEFAULT_NWEB = 1;
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
 const DEFAULT_A = 5;
 const DEFAULT_E = 29000;
 const DEFAULT_USE_DEFAULT_MEMBER = true;
 const MAX_WIDTH_TRANSITION = 855;
+
+const isDepthRelevant = (trussType: string) =>
+  trussType === "ParallelChordRoofTruss" || trussType === "ScissorTruss";
 
 const queryToMemberProps = (
   defaultVal: number,
@@ -106,6 +110,7 @@ export default function TrussForm() {
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down(MAX_WIDTH_TRANSITION));
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", NumberParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
+  const [depth = DEFAULT_DEPTH, setDepth] = useQueryParam("depth", NumberParam);
   const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
   const [trussType = DEFAULT_TRUSS_TYPE, setTrussType] = useQueryParam("trussType", StringParam);
   const [elasticModulusProps, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
@@ -147,6 +152,8 @@ export default function TrussForm() {
   const setTopForcesForm = useRef(null);
   const setBotForcesForm = useRef(null);
 
+  const includeDepth = isDepthRelevant(trussType || "");
+
   const updateForces = (
     row: number,
     col: number,
@@ -182,6 +189,7 @@ export default function TrussForm() {
       height || DEFAULT_HEIGHT,
       nWeb || DEFAULT_NWEB,
       forcesCorrected || DEFAULT_FORCES,
+      depth || DEFAULT_DEPTH,
       trussType || DEFAULT_TRUSS_TYPE,
       unitType,
       inputPropsToCalcProps(
@@ -218,6 +226,7 @@ export default function TrussForm() {
   }, [
     span,
     height,
+    depth,
     nWeb,
     forces,
     geometry?.members,
@@ -236,6 +245,10 @@ export default function TrussForm() {
 
   const handleSetHeight = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setHeight(+event?.target?.value);
+  };
+
+  const handleSetDepth = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    setDepth(+event?.target?.value);
   };
 
   // only store areas in url if it differs from the default
@@ -346,8 +359,8 @@ export default function TrussForm() {
   const throttledFetchGeometry = useMemo(
     () =>
       debounce(
-        (span1: number, height1: number, nWeb1: number, trussType1: string) =>
-          FetchGeometry(span1, height1, nWeb1, trussType1).then((result) => {
+        (span1: number, height1: number, nWeb1: number, depth1: number, trussType1: string) =>
+          FetchGeometry(span1, height1, nWeb1, depth1, trussType1).then((result) => {
             setGeometry(result.data);
             geometryFetchCount.current++;
           }),
@@ -361,9 +374,10 @@ export default function TrussForm() {
       span || DEFAULT_SPAN,
       height || DEFAULT_HEIGHT,
       nWeb || DEFAULT_NWEB,
+      depth || DEFAULT_DEPTH,
       trussType || DEFAULT_TRUSS_TYPE
     );
-  }, [span, height, nWeb, trussType, throttledFetchGeometry]);
+  }, [span, height, nWeb, depth, trussType, throttledFetchGeometry]);
 
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
@@ -446,7 +460,7 @@ export default function TrussForm() {
           </Grid>
           <Grid item xs={12}>
             <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={includeDepth ? 4 : 6} sm={includeDepth ? 2 : 3}>
                 <NumInput
                   label="Truss Span"
                   value={span || DEFAULT_SPAN}
@@ -457,7 +471,7 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={includeDepth ? 4 : 6} sm={includeDepth ? 2 : 3}>
                 <NumInput
                   label="Truss Height"
                   value={height || DEFAULT_HEIGHT}
@@ -468,6 +482,19 @@ export default function TrussForm() {
                   step={1}
                 />
               </Grid>
+              {includeDepth && (
+                <Grid item xs={4} sm={2}>
+                  <NumInput
+                    label="Truss Depth"
+                    value={depth || DEFAULT_DEPTH}
+                    onChange={handleSetDepth}
+                    unit={unitToLength(unitType)}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12} sm={6}>
                 <Container>
@@ -476,7 +503,7 @@ export default function TrussForm() {
                     value={nWeb || DEFAULT_NWEB}
                     onChange={setNWeb}
                     min={1}
-                    max={10}
+                    max={trussType === "ParallelChordRoofTruss" ? 18 : 10}
                     step={1}
                   />
                 </Container>

@@ -14,6 +14,8 @@ export const TRUSS_TYPES = [
   { type: "HoweRoofTruss", label: "Howe Roof" },
   { type: "FinkRoofTruss", label: "Fink Roof" },
   { type: "WarrenBridgeTruss", label: "Warren Bridge" },
+  { type: "ScissorTruss", label: "Scissor Truss" },
+  { type: "ParallelChordRoofTruss", label: "Parallel Chord Roof" },
 ] as TrussType[];
 
 interface StyleSelectorProps {
@@ -24,7 +26,7 @@ interface StyleSelectorProps {
 // Radio buttons to select the truss style
 export default function TrussStyleSelector({ trussType, handleChange }: StyleSelectorProps) {
   const roofTypes = TRUSS_TYPES.filter((typeName) => typeName.type.includes("Roof"));
-  const bridgeTypes = TRUSS_TYPES.filter((typeName) => typeName.type.includes("Bridge"));
+  const bridgeTypes = TRUSS_TYPES.filter((typeName) => !typeName.type.includes("Roof"));
   const groupedButtons = (typeList: TrussType[]) =>
     typeList.map((eachType) => (
       <FormControlLabel

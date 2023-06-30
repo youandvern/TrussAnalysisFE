@@ -17,16 +17,19 @@ export const FetchForces = (
   height: number,
   nWeb: number,
   forces: number[][],
+  trussDepth?: number,
   trussType?: string,
   unitType?: string,
   eMod?: MemberPropsType,
   aCross?: MemberPropsType
 ): Promise<FetchForcesObject> => {
+  const depth = trussType === "ParallelChordRoofTruss" || "ScissorTruss" ? trussDepth : undefined;
   const request_dict = {
     span: span,
     height: height,
     nWeb: nWeb,
     forces: forces,
+    trussDepth: depth,
     trussType: trussType,
     eMod: eMod,
     aCross: aCross,
