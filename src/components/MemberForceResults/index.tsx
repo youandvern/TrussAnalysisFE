@@ -1,23 +1,25 @@
 import React from "react";
 import { Collapse, Container } from "@mui/material";
 import DataTable from "../DataTableControlled";
-import { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/ApiForces";
+import { emptyApiForcesParsed } from "../../Types/ApiForces";
 
 interface MemberForceResultProps {
   showResult: boolean;
-  memberForceResults: ApiForcesParsed;
+  headers: string[];
+  memberForceResults: (number | JSX.Element)[][];
 }
 
 export default function MemberForceResults({
   showResult = false,
-  memberForceResults = emptyApiForcesParsed,
+  headers = emptyApiForcesParsed.memberForcesHeaders,
+  memberForceResults = emptyApiForcesParsed.memberForces,
 }: MemberForceResultProps) {
   return (
     <Collapse in={showResult}>
       <Container className="top-space">
         <DataTable
-          headerList={memberForceResults.memberForcesHeaders}
-          dataList={memberForceResults.memberForces}
+          headerList={headers}
+          dataList={memberForceResults}
           title="Member Forces (-Tension/+Compression)"
         />
       </Container>

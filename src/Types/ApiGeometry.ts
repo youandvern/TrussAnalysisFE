@@ -1,4 +1,4 @@
-import { MemberPropsType } from "../MemberPropertiesForm";
+import { MemberPropsType } from "../components/MemberPropertiesForm";
 
 export default interface ApiGeometry {
   nodes: Nodes;
@@ -24,7 +24,7 @@ export interface Members {
 export interface Member {
   start: number;
   end: number;
-  type: string;
+  type?: string;
   color?: string;
 }
 

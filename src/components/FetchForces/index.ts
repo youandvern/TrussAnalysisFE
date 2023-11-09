@@ -1,5 +1,5 @@
-import ApiForces, { ApiForcesParsed, emptyApiForcesParsed } from "../Interfaces/ApiForces";
-import { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import ApiForces, { ApiForcesParsed, emptyApiForcesParsed } from "../../Types/ApiForces";
+import { ApiGeometryGlobal } from "../../Types/ApiGeometry";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 import { unitToForce, unitToLength } from "../UnitSelector";
 import { MemberPropsType } from "../MemberPropertiesForm";
@@ -70,8 +70,6 @@ export const FetchForces = (
         structureStiffnessMatrix: unparsed_data.structureStiffnessMatrix,
         structureReducedStiffnessMatrix: unparsed_data.structureReducedStiffnessMatrix,
         reducedForceMatrix: unparsed_data.reducedForceMatrix,
-        globalE: unparsed_data.globalE,
-        globalA: unparsed_data.globalA,
       };
       show = true;
     }

@@ -1,14 +1,11 @@
 import { Theme, Typography, useMediaQuery, styled } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import React from "react";
 import DataTableSimple from "../DataTableSimple";
-import { ApiForcesParsed } from "../Interfaces/ApiForces";
 import TrussGraph, { GeometryProps } from "../TrussGraph";
 import "./style.css";
 import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
 import EndNodeSymbol from "./images/EndNodeSymbol.png";
 import MemberDirectionSymbol from "./images/MemberDirectionSymbol.png";
-import { MemberPropsType } from "../MemberPropertiesForm";
 import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
 import StartNodeSymbol from "./images/StartNodeSymbol.png";
 import {
@@ -21,16 +18,6 @@ import {
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
 
-// expected properties given to Labeled Switch
-interface CalcReportProps {
-  geometryProps: GeometryProps;
-  memberForces: ApiForcesParsed;
-  areaProps: MemberPropsType;
-  elasticModulusProps: MemberPropsType;
-  useDefaultMemberProps: boolean;
-  unitType?: string;
-}
-
 const matrixNumTruncator = (val: number, precision?: number) =>
   +val.toPrecision(precision ? precision : 3) / 1;
 
@@ -40,12 +27,6 @@ const arrayToMatrix = (array: any[]) => {
     matrix.push([j / 2, matrixNumTruncator(array[j]), matrixNumTruncator(array[j + 1])]);
   }
   return matrix;
-};
-
-const memberKeyToType = {
-  top: "Top Chord",
-  bot: "Bottom Chord",
-  web: "Web Members",
 };
 
 const StyledLink = styled("a")({
@@ -101,50 +82,69 @@ const trigMatrixArray = [
   [exponent("-cs", ""), exponent("-s", "2"), exponent("cs", ""), exponent("s", "2")],
 ];
 
+export type MemberProperty = { id: number; A: number; E: number };
+
+// expected properties given to Labeled Switch
+interface CalcReportProps {
+  geometryProps: GeometryProps;
+  memberForces: (number | JSX.Element)[][];
+  memberForcesHeaders: string[];
+  memberProperties: MemberProperty[];
+  displacements: number[];
+  member0StiffnessMatrix: number[][];
+  structureStiffnessMatrix: number[][];
+  structureReducedStiffnessMatrix: number[][];
+  reducedForceMatrix: number[];
+  useDefaultMemberProps: boolean;
+  unitType?: string;
+}
+
 // Div holding calculation report
 export default function CalculationReport({
   geometryProps,
   memberForces,
-  areaProps,
-  elasticModulusProps,
+  memberForcesHeaders,
+  memberProperties,
+  displacements,
+  member0StiffnessMatrix,
+  structureStiffnessMatrix,
+  structureReducedStiffnessMatrix,
+  reducedForceMatrix,
   useDefaultMemberProps,
   unitType,
 }: CalcReportProps) {
-  const nodeHeights = Object.values(geometryProps.trussGeometry.nodes).map((n) => n.y);
-
   const lengthUnit = unitToLength(unitType);
   const inputLengthUnit = unitToInputLength(unitType);
   const forceUnit = unitToForce(unitType);
-  const nodeSizeEst =
-    Math.max(geometryProps.globalGeometry.height * 3, geometryProps.globalGeometry.span) / 100;
-  const totalWidth = geometryProps.globalGeometry.span + 8 * nodeSizeEst;
-  const totalHeight = Math.max(...nodeHeights) - Math.min(...nodeHeights) + 9 * nodeSizeEst;
+  const nodeSizeEst = Math.max(geometryProps.trussHeight * 3, geometryProps.trussWidth) / 100;
+  const totalWidth = geometryProps.trussWidth + 8 * nodeSizeEst;
+  const totalHeight = geometryProps.trussHeight + 9 * nodeSizeEst;
   const trussOnlyFrameHeight = Math.min(
     geometryProps.frameHeight,
     (geometryProps.frameWidth * totalHeight) / totalWidth
   );
-  const nodesLength = Object.keys(geometryProps.trussGeometry.nodes).length;
+  const nNodes = Object.keys(geometryProps.nodes).length;
 
-  const member0Length = memberForces.memberForces[0][2];
-  const factoredK0 = memberForces.member0StiffnessMatrix.map((row) =>
+  const member0A = memberProperties[0].A;
+  const member0E = memberProperties[0].E;
+  const member0Length = +memberForces[0][2];
+  const factoredK0 = member0StiffnessMatrix.map((row) =>
     row.map((cell) =>
       matrixNumTruncator(
         (cell * member0Length) /
           (unitToAreaFactorInputToCalc(unitType) *
-            areaProps.top *
+            member0A *
             unitToStressFactorInputToCalc(unitType) *
-            elasticModulusProps.top)
+            member0E)
       )
     )
   );
 
-  const kFull = memberForces.structureStiffnessMatrix.map((row) =>
+  const kFull = structureStiffnessMatrix.map((row) => row.map((val) => matrixNumTruncator(val)));
+  const kReduced = structureReducedStiffnessMatrix.map((row) =>
     row.map((val) => matrixNumTruncator(val))
   );
-  const kReduced = memberForces.structureReducedStiffnessMatrix.map((row) =>
-    row.map((val) => matrixNumTruncator(val))
-  );
-  const fReduced = [memberForces.reducedForceMatrix.map((val) => matrixNumTruncator(val))];
+  const fReduced = [reducedForceMatrix.map((val) => matrixNumTruncator(val))];
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
@@ -160,8 +160,8 @@ export default function CalculationReport({
         and member configurations are also summarized in Table 1 and Table 2 below.
       </p>
       <p>
-        The total span of the truss is {geometryProps.globalGeometry.span} {lengthUnit} and overall
-        height of the truss is {geometryProps.globalGeometry.height} {lengthUnit}.
+        The total span of the truss is {geometryProps.trussWidth} {lengthUnit} and overall height of
+        the truss is {geometryProps.trussHeight} {lengthUnit}.
       </p>
       {TrussGraph({
         ...geometryProps,
@@ -181,7 +181,7 @@ export default function CalculationReport({
           `Y-Position (${lengthUnit})`,
           "Fixity (if not free)",
         ]}
-        dataList={Object.entries(geometryProps.trussGeometry.nodes).map(([index, val]) => [
+        dataList={Object.entries(geometryProps.nodes).map(([index, val]) => [
           index,
           matrixNumTruncator(val.x),
           matrixNumTruncator(val.y),
@@ -190,8 +190,8 @@ export default function CalculationReport({
       />
       {caption("Table 1: Structure node geometry")}
       <DataTableSimple
-        headerList={memberForces.memberForcesHeaders.slice(0, 3)}
-        dataList={memberForces.memberForces.map((memForce) => memForce.slice(0, 3))}
+        headerList={memberForcesHeaders.slice(0, 3)}
+        dataList={memberForces.map((memForce) => memForce.slice(0, 3))}
       />
       {caption("Table 2: Structure member geometry")}
       <h3>2. Applied Loading to Nodes</h3>
@@ -289,8 +289,8 @@ export default function CalculationReport({
       {useDefaultMemberProps ? (
         <p>
           For member axial demand analysis of a determinate truss, A and E may be set equal to any
-          constant for all members. In this analaysis, A has been set to {areaProps.top}{" "}
-          {inputLengthUnit} <sup>2</sup> and E has been set to {elasticModulusProps.top}{" "}
+          constant for all members. In this analaysis, A has been set to {member0A}{" "}
+          {inputLengthUnit} <sup>2</sup> and E has been set to {member0E}{" "}
           {unitToInputStress(unitType)}.
         </p>
       ) : (
@@ -298,15 +298,11 @@ export default function CalculationReport({
           <p>In this analaysis, A and E have been set to the following values:</p>
           <DataTableSimple
             headerList={[
-              "Member Type",
+              "Member ID",
               `Cross-sectional Area (${unitToInputArea(unitType)})`,
               `Elastic Modulus (${unitToInputStress(unitType)})`,
             ]}
-            dataList={Object.keys(memberKeyToType).map((key) => [
-              memberKeyToType[key as keyof typeof memberKeyToType],
-              areaProps[key as keyof MemberPropsType],
-              elasticModulusProps[key as keyof MemberPropsType],
-            ])}
+            dataList={memberProperties.map((props) => [props.id, props.A, props.E])}
           />
         </>
       )}
@@ -333,8 +329,7 @@ export default function CalculationReport({
           </span>
           {fraction(
             <span>
-              {areaProps.top} {inputLengthUnit} <sup>2</sup> * {elasticModulusProps.top}{" "}
-              {unitToInputStress(unitType)}
+              {member0A} {inputLengthUnit} <sup>2</sup> * {member0E} {unitToInputStress(unitType)}
             </span>,
             member0Length.toPrecision(3) + lengthUnit
           )}
@@ -345,8 +340,8 @@ export default function CalculationReport({
       <p>
         All of the member stiffness matrices will be combined to form the global structure stiffness
         matrix, K, by grouping each nodal degree of freedom and summing the attached member
-        stiffness matrix elements. For this 2-dimensional truss with {nodesLength} nodes, the global
-        stiffness matrix will be {2 * nodesLength}x{2 * nodesLength}.
+        stiffness matrix elements. For this 2-dimensional truss with {nNodes} nodes, the global
+        stiffness matrix will be {2 * nNodes}x{2 * nNodes}.
       </p>
       <p>
         This operation yields the following structural stiffness matrix for the above defined truss:
@@ -394,7 +389,7 @@ export default function CalculationReport({
 
       <DataTableSimple
         headerList={["Node ID", `Δx (${lengthUnit})`, `Δy (${lengthUnit})`]}
-        dataList={arrayToMatrix(memberForces.displacements)}
+        dataList={arrayToMatrix(displacements)}
       />
       {caption("Table 4: Structure node displacements")}
       <h4>3.6 Calculate member axial demands</h4>
@@ -454,10 +449,10 @@ export default function CalculationReport({
       {caption(`Figure 4: Structure member loading (${forceUnit})`)}
       <DataTableSimple
         headerList={["Member ID", `Length (${lengthUnit})`, `Axial Demand (${forceUnit})`]}
-        dataList={memberForces.memberForces.map((row) => [
+        dataList={memberForces.map((row) => [
           row[0],
-          matrixNumTruncator(row[2], 4),
-          matrixNumTruncator(row[3], 4),
+          matrixNumTruncator(+row[2], 4),
+          matrixNumTruncator(+row[3], 4),
         ])}
       />
       {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}

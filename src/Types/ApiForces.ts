@@ -1,5 +1,5 @@
 import { Nodes, Members } from "./ApiGeometry";
-import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import { memberNodesFormatter } from "../components/Utilities/memberNodesFormatter";
 
 export default interface ApiForces {
   nodes: Nodes;
@@ -11,20 +11,16 @@ export default interface ApiForces {
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
-  globalE: number;
-  globalA: number;
 }
 
 export interface ApiForcesParsed {
-  memberForces: [number, JSX.Element, number, number][];
+  memberForces: (number | JSX.Element)[][];
   memberForcesHeaders: string[];
   displacements: number[];
   member0StiffnessMatrix: number[][];
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
-  globalE: number;
-  globalA: number;
 }
 
 export interface NodeForceControlled {
@@ -71,8 +67,6 @@ export const emptyApiForces = {
     [0, 0],
   ],
   reducedForceMatrix: [0, 0, 0, 0],
-  globalE: 1,
-  globalA: 1,
 } as ApiForces;
 
 export const emptyApiForcesParsed = {

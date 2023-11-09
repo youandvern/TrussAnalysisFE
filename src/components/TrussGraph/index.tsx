@@ -2,14 +2,16 @@ import React, { useEffect } from "react";
 import "./style.css";
 import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
 
-import ApiGeometry, { ApiGeometryGlobal } from "../Interfaces/ApiGeometry";
+import { Members, Nodes } from "../../Types/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { MemberForcesSummary } from "../Interfaces/ApiForces";
+import { MemberForcesSummary } from "../../Types/ApiForces";
 import { GLOBAL_THEME } from "../../App";
 
 export interface GeometryProps {
-  globalGeometry: ApiGeometryGlobal;
-  trussGeometry: ApiGeometry;
+  trussHeight: number;
+  trussWidth: number;
+  nodes: Nodes;
+  members: Members;
   frameHeight: number;
   frameWidth: number;
   showNodeLabels: boolean;
@@ -24,8 +26,10 @@ export interface GeometryProps {
 
 // Graph canvas to display truss
 export default function TrussGraph({
-  globalGeometry,
-  trussGeometry,
+  trussHeight,
+  trussWidth,
+  nodes,
+  members,
   frameHeight,
   frameWidth,
   showNodeLabels,
@@ -37,10 +41,6 @@ export default function TrussGraph({
   keySeed = "0",
   onRender,
 }: GeometryProps) {
-  const nodeHeights = Object.values(trussGeometry.nodes).map((n) => n.y);
-
-  const trussHeight = Math.max(...nodeHeights) - Math.min(...nodeHeights);
-  const trussWidth = globalGeometry.span;
   const nodeSize = Math.max(trussHeight * 3, trussWidth) / 100;
   const border = nodeSize * 5;
   const borderBot = nodeSize * 6;
@@ -244,12 +244,12 @@ export default function TrussGraph({
         {showAxes &&
           axes(0, frameHeight - 5 * nodeSizeScaled - border * fscale, 5 * nodeSizeScaled)}
 
-        {Object.entries(trussGeometry.members).map(([iMember, member]) => {
+        {Object.entries(members).map(([iMember, member]) => {
           const points = {
-            x1: trussGeometry.nodes[member.start].x * fscale,
-            y1: trussGeometry.nodes[member.start].y * fscale,
-            x2: trussGeometry.nodes[member.end].x * fscale,
-            y2: trussGeometry.nodes[member.end].y * fscale,
+            x1: nodes[member.start].x * fscale,
+            y1: nodes[member.start].y * fscale,
+            x2: nodes[member.end].x * fscale,
+            y2: nodes[member.end].y * fscale,
           };
           return (
             <>
@@ -273,7 +273,7 @@ export default function TrussGraph({
           );
         })}
 
-        {Object.entries(trussGeometry.nodes).map(([iNode, node]) => {
+        {Object.entries(nodes).map(([iNode, node]) => {
           const thisNodeForce = showForceArrows && nodeForces && nodeForces[+iNode];
           const nodeX = node.x * fscale;
           const nodeY = node.y * fscale;
