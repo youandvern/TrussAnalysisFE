@@ -7,6 +7,28 @@ import { dataToColorScale } from "../Utilities/DataToColorscale";
 import { MemberForcesSummary } from "../../Types/ApiForces";
 import { GLOBAL_THEME } from "../../App";
 
+// force the truss to start at (0, 0)
+function getPositionCorrectedNodes(nodes: Nodes): Nodes {
+  const [minX, minY] = Object.values(nodes).reduce(
+    (prev, cur) => [Math.min(prev[0], cur.x), Math.min(prev[1], cur.y)],
+    [nodes["0"].x, nodes["0"].y]
+  );
+
+  const xCorrection = 0 - minX;
+  const yCorrection = 0 - minY;
+
+  return Object.keys(nodes).reduce((acc, key) => {
+    const originalNode = nodes[key];
+
+    const correctedX = originalNode.x + xCorrection;
+    const correctedY = originalNode.y + yCorrection;
+
+    acc[key] = { ...originalNode, x: correctedX, y: correctedY };
+
+    return acc;
+  }, {} as Nodes);
+}
+
 export interface GeometryProps {
   trussHeight: number;
   trussWidth: number;
@@ -41,6 +63,8 @@ export default function TrussGraph({
   keySeed = "0",
   onRender,
 }: GeometryProps) {
+  const correctedNodes = getPositionCorrectedNodes(nodes);
+
   const nodeSize = Math.max(trussHeight * 3, trussWidth) / 100;
   const border = nodeSize * 5;
   const borderBot = nodeSize * 6;
@@ -246,10 +270,10 @@ export default function TrussGraph({
 
         {Object.entries(members).map(([iMember, member]) => {
           const points = {
-            x1: nodes[member.start].x * fscale,
-            y1: nodes[member.start].y * fscale,
-            x2: nodes[member.end].x * fscale,
-            y2: nodes[member.end].y * fscale,
+            x1: correctedNodes[member.start].x * fscale,
+            y1: correctedNodes[member.start].y * fscale,
+            x2: correctedNodes[member.end].x * fscale,
+            y2: correctedNodes[member.end].y * fscale,
           };
           return (
             <>
@@ -273,7 +297,7 @@ export default function TrussGraph({
           );
         })}
 
-        {Object.entries(nodes).map(([iNode, node]) => {
+        {Object.entries(correctedNodes).map(([iNode, node]) => {
           const thisNodeForce = showForceArrows && nodeForces && nodeForces[+iNode];
           const nodeX = node.x * fscale;
           const nodeY = node.y * fscale;

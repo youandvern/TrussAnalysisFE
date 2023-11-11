@@ -11,7 +11,7 @@ interface NumProps {
   toolTip?: string;
   min?: number;
   max?: number;
-  step?: number;
+  step?: number | "any";
   disabled?: boolean;
 }
 

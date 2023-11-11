@@ -56,9 +56,9 @@ function encodeCustomNodeArrayDelimited(
  */
 function decodeCustomNodeArrayDelimited(
   input: string | (string | null)[] | null | undefined
-): CustomNode[] | null {
+): CustomNode[] {
   const arrayStr = input instanceof Array ? input[0] : input;
-  if (arrayStr == null || arrayStr === "") return null;
+  if (arrayStr == null || arrayStr === "") return [];
 
   return arrayStr
     .split(NODE_DELIMITER)

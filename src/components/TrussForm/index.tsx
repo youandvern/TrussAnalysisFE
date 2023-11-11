@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { useQueryParam, StringParam, QueryParamConfig } from "use-query-params";
+import { useQueryParam, StringParam } from "use-query-params";
 import "./style.css";
 import { Grid, useMediaQuery, Theme } from "@mui/material";
 import LabeledSwitch from "../LabeledSwitch";
@@ -14,6 +14,7 @@ import { TrussCategory } from "../TrussCategorySelector";
 import StandardForm from "./StandardForm";
 import CustomForm from "./CustomForm";
 import { CategoryParam } from "./StringQueries";
+import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
 
 const DEFAULT_TRUSS_CATEGORY: TrussCategory = "bridge";
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
@@ -44,6 +45,17 @@ export default function TrussForm() {
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
   const [showForceArrows, setShowForceArrows] = useState(true);
+
+  const [startingCustomGeometry, setStartingCustomGeometry] = useState<
+    [CustomNode[], CustomMember[]]
+  >([[], []]);
+
+  const handleSetStartingCustomNodes = (nodes: CustomNode[], members: CustomMember[]) => {
+    console.log(
+      `setting starting geometry with ${nodes.length} nodes and ${members.length} members`
+    );
+    setStartingCustomGeometry([nodes, members]);
+  };
 
   const handleChangeTrussType = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTrussType(event?.target?.value);
@@ -151,6 +163,8 @@ export default function TrussForm() {
           frameHeight={frameHeight}
           graphGridRef={graphGridRef}
           onRenderGraph={onRenderGraph}
+          startingNodes={startingCustomGeometry[0]}
+          startingMembers={startingCustomGeometry[1]}
         />
       ) : (
         <StandardForm
@@ -165,6 +179,7 @@ export default function TrussForm() {
           graphGridRef={graphGridRef}
           onRenderGraph={onRenderGraph}
           setTrussCategory={setTrussCategory}
+          onUnmount={handleSetStartingCustomNodes}
         />
       )}
     </>

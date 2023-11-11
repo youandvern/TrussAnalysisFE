@@ -99,6 +99,7 @@ interface CalcReportProps {
   unitType?: string;
 }
 
+// TODO: add section for reactions
 // Div holding calculation report
 export default function CalculationReport({
   geometryProps,
@@ -370,7 +371,8 @@ export default function CalculationReport({
       <h4>3.5 Analysis for global displacements</h4>
       <p>
         The global nodal displacements are calculated by inverting the reduced stiffness matrix and
-        multiplying it with the reduced structure force matrix.
+        multiplying it with the reduced structure force matrix: K<sub>R</sub>
+        <sup>-1</sup> &#183; Q<sub>R</sub>
       </p>
       {useDefaultMemberProps && (
         <p>

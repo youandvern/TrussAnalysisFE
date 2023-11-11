@@ -2,23 +2,33 @@ import React, { useCallback } from "react";
 import { useState, useEffect } from "react";
 import { useQueryParam } from "use-query-params";
 import "./style.css";
-import { Grid, Button, Box } from "@mui/material";
+import { Grid, Button, Box, Typography, useMediaQuery, Theme, Tabs, Tab } from "@mui/material";
 import TrussGraph from "../TrussGraph";
 import { Nodes, Members } from "../../Types/ApiGeometry";
 import MemberForceResults from "../MemberForceResults";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
 import CalculationReport from "../CalculationReport";
-import { unitToForce, unitToLength } from "../UnitSelector";
+import {
+  unitToAreaFactorInputToCalc,
+  unitToForce,
+  unitToLength,
+  unitToStressFactorInputToCalc,
+} from "../UnitSelector";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
 import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
 import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
 import {
   ApiCustomAnalysisResultsSuccess,
+  CustomMember,
+  CustomNode,
   MemberAnalysisResults,
 } from "../../Types/ApiAnalysisResults";
 import { FetchCustomAnalysis } from "../FetchCustomAnalysis";
 import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import CustomNodes from "./CustomNodes/CustomNodes";
+import CustomMembers from "./CustomMembers/CustomMembers";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
   // Get spread of forces for color calculations
@@ -31,6 +41,39 @@ const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
   return { max: max, min: min };
 };
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function CustomTabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`edit-tabpanel-${index}`}
+      aria-labelledby={`edit-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 1 }}>
+          <Typography>{children}</Typography>
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `edit-tab-${index}`,
+    "aria-controls": `edit-tabpanel-${index}`,
+  };
+}
+
 type Props = {
   unitType: string;
   showNodeLabels: boolean;
@@ -40,6 +83,8 @@ type Props = {
   frameHeight: number;
   graphGridRef: React.RefObject<HTMLDivElement>;
   onRenderGraph: () => void;
+  startingNodes?: CustomNode[];
+  startingMembers?: CustomMember[];
 };
 
 // clean up standard query params when unmounting
@@ -52,17 +97,28 @@ export default function CustomForm({
   frameHeight,
   graphGridRef,
   onRenderGraph,
+  startingNodes,
+  startingMembers,
 }: Props) {
-  const [customNodes, setCustomNodes] = useQueryParam("cnodes", QueryCustomNodesArray);
-  const [customMembers, setCustomMembers] = useQueryParam("cmems", QueryCustomMembersArray);
+  // TODO: handle errors and stability issues
+  const [customNodes = startingNodes || [], setCustomNodes] = useQueryParam(
+    "cnodes",
+    QueryCustomNodesArray
+  );
+  const [customMembers = startingMembers || [], setCustomMembers] = useQueryParam(
+    "cmems",
+    QueryCustomMembersArray
+  );
+
   const [isStable, setIsStable] = useState(false);
   const [customError, setCustomError] = useState<string>();
   const [customResults, setCustomResults] = useState<ApiCustomAnalysisResultsSuccess>();
 
   const [hideCalculations, setHideCalculations] = useState(true);
   const [showMemberForces, setShowMemberForces] = useState(false);
+  const [tabIndex, setTabIndex] = useState(0);
 
-  const nNodes = customNodes?.length || 0;
+  const nNodes = customNodes.length || 0;
   const isGeometryEntered = nNodes >= 2;
   const isResultCalculated = !!customResults && customResults.isStable;
 
@@ -71,18 +127,21 @@ export default function CustomForm({
 
   const nodesForGraph: Nodes =
     customNodes
-      ?.map((node) => ({ x: node.x, y: node.y, fixity: node.support || "free" }))
+      .map((node) => ({ x: node.x, y: node.y, fixity: node.support || "free" }))
       .reduce((ob, val, index) => ({ ...ob, [index]: val }), {}) || {};
 
   const nodeYs = Object.values(nodesForGraph).map((n) => n.y);
   const nodeXs = Object.values(nodesForGraph).map((n) => n.x);
-
   const trussHeight = Math.max(...nodeYs) - Math.min(...nodeYs);
   const trussWidth = Math.max(...nodeXs) - Math.min(...nodeXs);
 
+  const lengthUnit = unitToLength(unitType);
+  const forceUnit = unitToForce(unitType);
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+
   const membersForGraph: Members =
     customMembers
-      ?.map((member, index) => ({
+      .map((member, index) => ({
         start: member.start,
         end: member.end,
         color:
@@ -95,7 +154,7 @@ export default function CustomForm({
       }))
       .reduce((ob, val, index) => ({ ...ob, [index]: val }), {}) || {};
 
-  const forcesForGraph: number[][] = customNodes?.map((node, index) => [
+  const forcesForGraph: number[][] = customNodes.map((node, index) => [
     index,
     node.Fx || 0,
     node.Fy || 0,
@@ -104,8 +163,8 @@ export default function CustomForm({
   const memberResultHeaders = [
     "Member ID",
     "Start -> End Node",
-    `Length (${unitToLength(unitType)})`,
-    `Axial Force (${unitToForce(unitType)})`,
+    `Length (${lengthUnit})`,
+    `Axial Force (${forceUnit})`,
   ];
   const memberResultsForDisplay = customResults?.memberResults.map((member) => [
     member.index,
@@ -113,6 +172,52 @@ export default function CustomForm({
     Math.abs(member.length) < 0.0001 ? 0 : +member.length.toPrecision(4),
     Math.abs(member.axial) < 0.0001 ? 0 : +member.axial.toPrecision(4),
   ]);
+
+  const handleAddNodes = (nodes: CustomNode[]) => {
+    setCustomNodes((cur) => (cur ? [...cur, ...nodes] : [...nodes]));
+  };
+
+  const handleEditNode = (id: number, node: CustomNode) => {
+    setCustomNodes((cur) => {
+      const newNodes = [...(cur || [])];
+      newNodes[id] = node;
+      return newNodes;
+    });
+  };
+
+  // TODO: also delete connected members and reduce node numbers for all greater than
+  const handleDeleteNode = (id: number) => {
+    setCustomNodes((cur) => {
+      const newNodes = [...(cur || [])];
+      newNodes.splice(id, 1);
+      return newNodes;
+    });
+  };
+
+  const handleAddMembers = (members: CustomMember[]) => {
+    setCustomMembers((cur) => (cur ? [...cur, ...members] : [...members]));
+  };
+
+  const handleEditMember = (id: number, member: CustomMember) => {
+    setCustomMembers((cur) => {
+      const newMembers = [...(cur || [])];
+      newMembers[id] = member;
+      return newMembers;
+    });
+  };
+
+  const handleDeleteMember = (id: number) => {
+    setCustomMembers((cur) => {
+      const newMembers = [...(cur || [])];
+      newMembers.splice(id, 1);
+      return newMembers;
+    });
+  };
+
+  const handleDeleteAll = () => {
+    setCustomMembers([]);
+    setCustomNodes([]);
+  };
 
   const handleHideCalculations = () => {
     setHideCalculations(true);
@@ -135,12 +240,21 @@ export default function CustomForm({
       return;
     }
 
-    FetchCustomAnalysis({ nodes: customNodes, members: customMembers })
+    const areaUnitConversionFactor = unitToAreaFactorInputToCalc(unitType);
+    const stressUnitConversionFactor = unitToStressFactorInputToCalc(unitType);
+    const unitCorrectedMembers = customMembers.map((member) => ({
+      ...member,
+      A: (member.A || 1) * areaUnitConversionFactor,
+      E: (member.E || 1) * stressUnitConversionFactor,
+    }));
+    const forceCorrectedNodes = customNodes.map((node) => ({ ...node, Fy: -1 * (node.Fy || 0) }));
+    FetchCustomAnalysis({ nodes: forceCorrectedNodes, members: unitCorrectedMembers })
       .then((result) => {
         setIsStable(result.isStable);
         if (!result.success) {
           setCustomError(result.error);
         } else {
+          setShowMemberForces(result.isStable);
           setCustomResults(result);
         }
       })
@@ -159,6 +273,19 @@ export default function CustomForm({
   }, [customNodes, customMembers]);
 
   useEffect(() => {
+    console.log(
+      `effect triggered with ${startingNodes?.length} nodes and ${startingMembers?.length} members`
+    );
+    if (!customNodes?.length && !!startingNodes?.length) {
+      setCustomNodes(startingNodes);
+    }
+    if (!customMembers?.length && !!startingMembers?.length) {
+      setCustomMembers(startingMembers);
+    }
+  }, [startingNodes, startingMembers]);
+
+  useEffect(() => {
+    // Note: react strict mode will unmount and call this before the second render in dev mode. It clears the query params from the url.
     return cleanUpAllQueryParams;
   }, []);
 
@@ -167,8 +294,8 @@ export default function CustomForm({
       <div className="not-calc-report">
         <Grid container columnSpacing={2} rowSpacing={3}>
           <Grid item xs={12}>
-            {isGeometryEntered && (
-              <Box ref={graphGridRef}>
+            {isGeometryEntered ? (
+              <Box ref={graphGridRef} marginTop={4}>
                 <TrussGraph
                   trussHeight={trussHeight}
                   trussWidth={trussWidth}
@@ -185,19 +312,73 @@ export default function CustomForm({
                   onRender={onRenderGraph}
                 />
               </Box>
+            ) : (
+              <Box
+                marginTop={1}
+                height={smallScreen ? 120 : 240}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                border={1}
+                borderRadius={4}
+                sx={{ backgroundColor: (theme) => theme.palette.grey[200] }}
+              >
+                <Typography fontWeight="bold" textAlign="center">
+                  Add at least 2 nodes to see geometry
+                </Typography>
+              </Box>
             )}
           </Grid>
           <Grid item xs={12}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <div>This is for adding nodes</div>
-              </Grid>
-              <Grid item xs={12}>
-                <div>This is for adding members</div>
+                <Box
+                  display="flex"
+                  flexDirection={{ xs: "column", md: "row" }}
+                  justifyContent={{ xs: "start", md: "space-between" }}
+                  gap={2}
+                >
+                  <Box borderBottom={1} borderColor="divider" flexGrow={1}>
+                    <Tabs
+                      value={tabIndex}
+                      onChange={(e, v) => setTabIndex(v)}
+                      aria-label="edit nodes or members tabs"
+                    >
+                      <Tab label="Edit Nodes" {...a11yProps(0)} />
+                      <Tab label="Edit Members" {...a11yProps(1)} />
+                    </Tabs>
+                  </Box>
+                  <Button onClick={handleDeleteAll}>
+                    <DeleteIcon /> <b>Clear All</b>
+                  </Button>
+                </Box>
+                <CustomTabPanel value={tabIndex} index={0}>
+                  <CustomNodes
+                    lengthUnit={lengthUnit}
+                    forceUnit={forceUnit}
+                    customNodes={customNodes}
+                    unitType={unitType}
+                    handleAddNodes={handleAddNodes}
+                    handleEditNode={handleEditNode}
+                    handleDeleteNode={handleDeleteNode}
+                  />
+                </CustomTabPanel>
+                <CustomTabPanel value={tabIndex} index={1}>
+                  <CustomMembers
+                    customMembers={customMembers}
+                    unitType={unitType}
+                    handleAddMembers={handleAddMembers}
+                    handleEditMember={handleEditMember}
+                    handleDeleteMember={handleDeleteMember}
+                    nodeCount={customNodes.length}
+                  />
+                </CustomTabPanel>
               </Grid>
 
-              <Grid item xs={12} md={4} className="stacked-buttons">
+              <Grid item xs={12} md={4}>
                 <CalculateOnEmailButton updateForces={updateMemberForcesCustom} />
+              </Grid>
+              <Grid item xs={12} md={4}>
                 <Button
                   variant="outlined"
                   fullWidth
@@ -207,6 +388,8 @@ export default function CustomForm({
                 >
                   Print Calculation Report
                 </Button>
+              </Grid>
+              <Grid item xs={12} md={4}>
                 <Button
                   variant="outlined"
                   fullWidth
@@ -218,15 +401,13 @@ export default function CustomForm({
                 </Button>
               </Grid>
 
-              {!hideCalculations || (
-                <Grid item xs={12}>
-                  <MemberForceResults
-                    showResult={showMemberForces}
-                    headers={memberResultHeaders}
-                    memberForceResults={memberResultsForDisplay || [[0, 0, 0, 0]]}
-                  />
-                </Grid>
-              )}
+              <Grid item xs={12}>
+                <MemberForceResults
+                  showResult={showMemberForces && hideCalculations}
+                  headers={memberResultHeaders}
+                  memberForceResults={memberResultsForDisplay || [[0, 0, 0, 0]]}
+                />
+              </Grid>
             </Grid>
           </Grid>
         </Grid>
@@ -250,8 +431,7 @@ export default function CustomForm({
             memberForces={memberResultsForDisplay || [[]]}
             memberForcesHeaders={memberResultHeaders}
             memberProperties={
-              customMembers?.map((mem, index) => ({ id: index, A: mem.A || 1, E: mem.E || 1 })) ||
-              []
+              customMembers.map((mem, index) => ({ id: index, A: mem.A || 1, E: mem.E || 1 })) || []
             }
             displacements={customResults.displacements || []}
             member0StiffnessMatrix={customResults.member0StiffnessMatrix}

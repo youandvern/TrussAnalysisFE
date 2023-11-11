@@ -37,8 +37,9 @@ import {
 } from "../UnitSelector";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
 import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
-import { BRIDGE_TRUSS_TYPES, ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
+import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
 import { TrussCategory } from "../TrussCategorySelector";
+import { CustomMember, CustomNode, SupportType } from "../../Types/ApiAnalysisResults";
 
 const debounce = require("lodash.debounce");
 
@@ -107,6 +108,7 @@ type Props = {
     newValue: TrussCategory | null | undefined,
     updateType?: any | undefined
   ) => void;
+  onUnmount: (nodes: CustomNode[], members: CustomMember[]) => void;
 };
 
 // clean up standard query params when unmounting
@@ -122,6 +124,7 @@ export default function StandardForm({
   graphGridRef,
   onRenderGraph,
   setTrussCategory,
+  onUnmount,
 }: Props) {
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", NumberParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
@@ -156,8 +159,11 @@ export default function StandardForm({
 
   const forceUnit = unitToForce(unitType);
 
-  const areaPropsParsed = queryToMemberProps(DEFAULT_A, areaProps);
-  const elasticModulusPropsParsed = queryToMemberProps(DEFAULT_E, elasticModulusProps);
+  const areaPropsParsed = useRef(queryToMemberProps(DEFAULT_A, areaProps));
+  const elasticModulusPropsParsed = useRef(queryToMemberProps(DEFAULT_E, elasticModulusProps));
+
+  const geometryRef = useRef(geometry);
+  const forcesRef = useRef(forces);
 
   const handleHideCalculations = () => {
     setHideCalculations(true);
@@ -180,21 +186,24 @@ export default function StandardForm({
     col: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForces((oldForces) =>
-      (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
+    setForces((oldForces) => {
+      const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
         if (rindex === row) {
           const newRow = [...rowArray];
           newRow[col] = +e.target.value;
           return newRow;
         }
         return rowArray;
-      })
-    );
+      });
+      forcesRef.current = [...newForces];
+      return newForces;
+    });
     handleHideAllResults();
   };
 
   const resetForces = useCallback(() => {
     setForces(undefined);
+    forcesRef.current = undefined;
     handleHideAllResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nNodes, setForces]);
@@ -277,6 +286,7 @@ export default function StandardForm({
       setAreaProps((oldAreaProps) => {
         const newAreaProps = oldAreaProps ? { ...oldAreaProps } : {};
         newAreaProps[memberType] = newArea;
+        areaPropsParsed.current = queryToMemberProps(DEFAULT_A, newAreaProps);
         return newAreaProps;
       });
   };
@@ -291,6 +301,7 @@ export default function StandardForm({
       setElasticModulusProps((oldElasticModProps) => {
         const newElasticModProps = oldElasticModProps ? { ...oldElasticModProps } : {};
         newElasticModProps[memberType] = newElasticMod;
+        elasticModulusPropsParsed.current = queryToMemberProps(DEFAULT_E, newElasticModProps);
         return newElasticModProps;
       });
   };
@@ -301,8 +312,8 @@ export default function StandardForm({
       const fx = +form["Fx"]["value"] || 0;
       const fy = +form["Fy"]["value"] || 0;
 
-      setForces((oldForces) =>
-        (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
+      setForces((oldForces) => {
+        const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
           if (nodeIds.includes(rindex)) {
             const newRow = [...rowArray];
 
@@ -311,8 +322,10 @@ export default function StandardForm({
             return newRow;
           }
           return rowArray;
-        })
-      );
+        });
+        forcesRef.current = [...newForces];
+        return newForces;
+      });
       handleHideAllResults();
     } else {
       console.log("Error: nodes not found.");
@@ -324,7 +337,9 @@ export default function StandardForm({
     setUseDefaultMember(checked ? undefined : false);
     if (checked) {
       setElasticModulusProps(undefined);
+      elasticModulusPropsParsed.current = queryToMemberProps(DEFAULT_E, undefined);
       setAreaProps(undefined);
+      areaPropsParsed.current = queryToMemberProps(DEFAULT_A, undefined);
     }
   };
 
@@ -359,6 +374,7 @@ export default function StandardForm({
         (span1: number, height1: number, nWeb1: number, depth1: number, trussType1: string) =>
           FetchGeometry(span1, height1, nWeb1, depth1, trussType1).then((result) => {
             setGeometry(result.data);
+            geometryRef.current = result.data;
             geometryFetchCount.current++;
           }),
         300
@@ -382,6 +398,38 @@ export default function StandardForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [span, height, nWeb, trussType, unitType, elasticModulusProps, areaProps]);
 
+  // All data has to come from refs, not from state. When unmount, state is not defined.
+  const unmountWithGeometry = () => {
+    console.log(`unmounting geometry = ${JSON.stringify(geometryRef.current)}`);
+    console.log(`unmounting emod = ${JSON.stringify(areaPropsParsed)}`);
+    if (geometryRef.current) {
+      const customNodes: CustomNode[] = Object.values(geometryRef.current.nodes).map(
+        (node, index) => ({
+          x: node.x,
+          y: node.y,
+          support: node.fixity ? (node.fixity as SupportType) : "free",
+          Fx: forcesRef.current ? forcesRef.current[index][1] : 0,
+          Fy: forcesRef.current ? forcesRef.current[index][2] : 0,
+        })
+      );
+
+      const customMembers: CustomMember[] = Object.values(geometryRef.current.members).map(
+        (mem) => ({
+          start: mem.start,
+          end: mem.end,
+          A: getFromMemberPropsType(areaPropsParsed.current, mem.type),
+          E: getFromMemberPropsType(elasticModulusPropsParsed.current, mem.type),
+        })
+      );
+
+      console.log(
+        `unmounting with ${customNodes.length} nodes and ${customMembers.length} members`
+      );
+
+      onUnmount(customNodes, customMembers);
+    }
+  };
+
   const cleanUpAllQueryParams = () => {
     setSpan(undefined);
     setHeight(undefined);
@@ -394,7 +442,11 @@ export default function StandardForm({
   };
 
   useEffect(() => {
-    return cleanUpAllQueryParams;
+    // Note: react strict mode will unmount and call this before the second render in dev mode. It clears the query params from the url.
+    return () => {
+      unmountWithGeometry();
+      cleanUpAllQueryParams();
+    };
   }, []);
 
   return (
@@ -607,8 +659,11 @@ export default function StandardForm({
             memberForcesHeaders={standardizedForceResults.memberForcesHeaders}
             memberProperties={Object.values(geometry.members).map((mem, index) => ({
               id: index,
-              A: getFromMemberPropsType(areaPropsParsed, mem.type),
-              E: getFromMemberPropsType(elasticModulusPropsParsed, mem.type),
+              A: getFromMemberPropsType(queryToMemberProps(DEFAULT_A, areaProps), mem.type),
+              E: getFromMemberPropsType(
+                queryToMemberProps(DEFAULT_E, elasticModulusProps),
+                mem.type
+              ),
             }))}
             displacements={standardizedForceResults.displacements || []}
             member0StiffnessMatrix={standardizedForceResults.member0StiffnessMatrix}

@@ -42,9 +42,9 @@ function encodeCustomMemberArrayDelimited(
  */
 function decodeCustomMemberArrayDelimited(
   input: string | (string | null)[] | null | undefined
-): CustomMember[] | null {
+): CustomMember[] {
   const arrayStr = input instanceof Array ? input[0] : input;
-  if (arrayStr == null || arrayStr === "") return null;
+  if (arrayStr == null || arrayStr === "") return [];
 
   return arrayStr
     .split(MEMBER_DELIMITER)
