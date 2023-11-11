@@ -185,13 +185,22 @@ export default function CustomForm({
     });
   };
 
-  // TODO: also delete connected members and reduce node numbers for all greater than
   const handleDeleteNode = (id: number) => {
     setCustomNodes((cur) => {
       const newNodes = [...(cur || [])];
       newNodes.splice(id, 1);
       return newNodes;
     });
+
+    setCustomMembers((cur) =>
+      [...(cur || [])]
+        .filter((mem) => mem.start !== id && mem.end !== id)
+        .map((mem) => ({
+          ...mem,
+          start: mem.start < id ? mem.start : mem.start - 1,
+          end: mem.end < id ? mem.end : mem.end - 1,
+        }))
+    );
   };
 
   const handleAddMembers = (members: CustomMember[]) => {
