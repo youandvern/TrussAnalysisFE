@@ -13,7 +13,7 @@ function stringArrayToMember(ar?: string[]): CustomMember {
 }
 
 const MEMBER_DELIMITER = "_";
-const PARAM_DELIMITER = ",";
+const PARAM_DELIMITER = "~";
 
 /**
  * Encodes a CustomMember array as a delimited JSON string.

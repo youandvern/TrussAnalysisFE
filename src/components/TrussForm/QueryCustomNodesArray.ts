@@ -23,7 +23,7 @@ function stringArrayToNode(ar?: string[]): CustomNode {
 }
 
 const NODE_DELIMITER = "_";
-const PARAM_DELIMITER = ",";
+const PARAM_DELIMITER = "~";
 
 /**
  * Encodes a CustomNode array as a delimited JSON string.
