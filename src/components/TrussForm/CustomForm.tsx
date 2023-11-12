@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { useState, useEffect } from "react";
-import { useQueryParam } from "use-query-params";
+import { BooleanParam, NumberParam, NumericObjectParam, useQueryParam } from "use-query-params";
 import "./style.css";
 import { Grid, Button, Box, Typography, useMediaQuery, Theme, Tabs, Tab } from "@mui/material";
 import TrussGraph from "../TrussGraph";
@@ -31,6 +31,7 @@ import CustomMembers from "./CustomMembers/CustomMembers";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ErrorIcon from "@mui/icons-material/Error";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { Query2dNumberArray } from "./Query2dNumberArray";
 
 const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
   // Get spread of forces for color calculations
@@ -85,7 +86,6 @@ type Props = {
   startingMembers?: CustomMember[];
 };
 
-// clean up standard query params when unmounting
 export default function CustomForm({
   showNodeLabels,
   showMemberLabels,
@@ -98,6 +98,16 @@ export default function CustomForm({
   startingNodes,
   startingMembers,
 }: Props) {
+  // Standard form query params to clean up
+  const [_sp_none, setSpan] = useQueryParam("span", NumberParam);
+  const [_he_none, setHeight] = useQueryParam("height", NumberParam);
+  const [_de_none, setDepth] = useQueryParam("depth", NumberParam);
+  const [_nW_none, setNWeb] = useQueryParam("nWeb", NumberParam);
+  const [_el_none, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
+  const [_ar_none, setAreaProps] = useQueryParam("area", NumericObjectParam);
+  const [_us_none, setUseDefaultMember] = useQueryParam("defaultProps", BooleanParam);
+  const [_fo_none, setForces] = useQueryParam("zforces", Query2dNumberArray);
+
   const [customNodes = startingNodes || [], setCustomNodes] = useQueryParam(
     "cnodes",
     QueryCustomNodesArray
@@ -268,12 +278,7 @@ export default function CustomForm({
       .catch((reason) => {
         setCustomError(`There was a problem analyzing this truss. ${reason}`);
       });
-  }, [customNodes, customMembers]);
-
-  const cleanUpAllQueryParams = () => {
-    setCustomNodes(undefined);
-    setCustomMembers(undefined);
-  };
+  }, [customNodes, customMembers, unitType]);
 
   useEffect(() => {
     handleHideAllResults();
@@ -292,8 +297,15 @@ export default function CustomForm({
   }, [startingNodes, startingMembers]);
 
   useEffect(() => {
-    // Note: react strict mode will unmount and call this before the second render in dev mode. It clears the query params from the url.
-    return cleanUpAllQueryParams;
+    // clean up all unused query params
+    setSpan(undefined);
+    setHeight(undefined);
+    setDepth(undefined);
+    setNWeb(undefined);
+    setElasticModulusProps(undefined);
+    setAreaProps(undefined);
+    setUseDefaultMember(undefined);
+    setForces(undefined);
   }, []);
 
   return (

@@ -40,6 +40,8 @@ import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
 import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
 import { TrussCategory } from "../TrussCategorySelector";
 import { CustomMember, CustomNode, SupportType } from "../../Types/ApiAnalysisResults";
+import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
+import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
 
 const debounce = require("lodash.debounce");
 
@@ -126,6 +128,10 @@ export default function StandardForm({
   setTrussCategory,
   onUnmount,
 }: Props) {
+  // Custom form query params to clean up
+  const [_cnode, setCustomNodes] = useQueryParam("cnodes", QueryCustomNodesArray);
+  const [_cmem, setCustomMembers] = useQueryParam("cmems", QueryCustomMembersArray);
+
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", NumberParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", NumberParam);
   const [depth = DEFAULT_DEPTH, setDepth] = useQueryParam("depth", NumberParam);
@@ -430,22 +436,12 @@ export default function StandardForm({
     }
   };
 
-  const cleanUpAllQueryParams = () => {
-    setSpan(undefined);
-    setHeight(undefined);
-    setDepth(undefined);
-    setNWeb(undefined);
-    setElasticModulusProps(undefined);
-    setAreaProps(undefined);
-    setUseDefaultMember(undefined);
-    setForces(undefined);
-  };
-
   useEffect(() => {
-    // Note: react strict mode will unmount and call this before the second render in dev mode. It clears the query params from the url.
+    // clean up unused query params on mounting
+    setCustomNodes(undefined);
+    setCustomMembers(undefined);
     return () => {
       unmountWithGeometry();
-      cleanUpAllQueryParams();
     };
   }, []);
 
