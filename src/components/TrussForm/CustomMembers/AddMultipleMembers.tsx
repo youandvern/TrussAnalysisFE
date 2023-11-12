@@ -85,7 +85,7 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
   const handleSubmit = () => {
     setSuccess(undefined);
     setErrorMesage(undefined);
-    const inputArray = csvToArray(input || "");
+    const inputArray = csvToArray(input?.trim() || "");
 
     if (isInputArrayValid(inputArray)) {
       const newMembers: CustomMember[] = inputArray.map((row) => ({

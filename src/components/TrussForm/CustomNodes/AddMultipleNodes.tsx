@@ -82,7 +82,7 @@ export default function AddMultipleNodes({ onCreate, lengthUnit, forceUnit }: Pr
   const handleSubmit = () => {
     setSuccess(undefined);
     setErrorMesage(undefined);
-    const inputArray = csvToArray(input || "");
+    const inputArray = csvToArray(input?.trim() || "");
 
     if (isInputArrayValid(inputArray)) {
       const newNodes: CustomNode[] = inputArray.map((row) => ({
