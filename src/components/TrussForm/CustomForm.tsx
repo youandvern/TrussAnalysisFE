@@ -285,9 +285,6 @@ export default function CustomForm({
   }, [customNodes, customMembers]);
 
   useEffect(() => {
-    console.log(
-      `effect triggered with ${startingNodes?.length} nodes and ${startingMembers?.length} members`
-    );
     if (!customNodes?.length && !!startingNodes?.length) {
       setCustomNodes(startingNodes);
     }
