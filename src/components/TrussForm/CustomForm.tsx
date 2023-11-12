@@ -464,7 +464,7 @@ export default function CustomForm({
         </Grid>
       </div>
       <div id="print-only-calc-report" className="print-only-calc-report">
-        {isResultCalculated && (
+        {isResultCalculated && customMembers.length && customNodes.length && (
           <CalculationReport
             geometryProps={{
               trussHeight: trussHeight,
