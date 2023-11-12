@@ -51,9 +51,6 @@ export default function TrussForm() {
   >([[], []]);
 
   const handleSetStartingCustomNodes = (nodes: CustomNode[], members: CustomMember[]) => {
-    console.log(
-      `setting starting geometry with ${nodes.length} nodes and ${members.length} members`
-    );
     setStartingCustomGeometry([nodes, members]);
   };
 

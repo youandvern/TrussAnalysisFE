@@ -406,8 +406,6 @@ export default function StandardForm({
 
   // All data has to come from refs, not from state. When unmount, state is not defined.
   const unmountWithGeometry = () => {
-    console.log(`unmounting geometry = ${JSON.stringify(geometryRef.current)}`);
-    console.log(`unmounting emod = ${JSON.stringify(areaPropsParsed)}`);
     if (geometryRef.current) {
       const customNodes: CustomNode[] = Object.values(geometryRef.current.nodes).map(
         (node, index) => ({
@@ -426,10 +424,6 @@ export default function StandardForm({
           A: getFromMemberPropsType(areaPropsParsed.current, mem.type),
           E: getFromMemberPropsType(elasticModulusPropsParsed.current, mem.type),
         })
-      );
-
-      console.log(
-        `unmounting with ${customNodes.length} nodes and ${customMembers.length} members`
       );
 
       onUnmount(customNodes, customMembers);
