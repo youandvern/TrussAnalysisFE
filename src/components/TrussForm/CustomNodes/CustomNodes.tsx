@@ -18,13 +18,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useState } from "react";
 import EditNodeForm from "./EditNodeForm";
+import { numTruncator } from "../utils";
 
 const NodeActions = (
   nodeIndex: number,
   handleEditNode: (id: number) => void,
   handleDeleteNode: (id: number) => void
 ) => (
-  <>
+  <span style={{ whiteSpace: "nowrap" }}>
     <IconButton
       aria-label="edit"
       onClick={() => {
@@ -41,7 +42,7 @@ const NodeActions = (
     >
       <DeleteIcon />
     </IconButton>
-  </>
+  </span>
 );
 
 type Props = {
@@ -85,6 +86,8 @@ export default function CustomNodes({
       {customNodes.length > 0 && (
         <Box overflow="auto" padding={1}>
           <DataTableSimple
+            condensed
+            centered
             headerList={[
               "Node ID",
               `X-Position (${lengthUnit})`,
@@ -92,12 +95,12 @@ export default function CustomNodes({
               "Support",
               `Fx (${forceUnit})`,
               `Fy (${forceUnit})`,
-              "Actions (edit/delete)",
+              "Edit/Delete",
             ]}
             dataList={customNodes.map((node, index) => [
               index,
-              node.x,
-              node.y,
+              numTruncator(node.x, 6),
+              numTruncator(node.y, 6),
               node.support,
               node.Fx,
               node.Fy,

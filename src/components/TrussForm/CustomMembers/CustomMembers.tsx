@@ -25,7 +25,7 @@ const MemberActions = (
   handleEditMember: (id: number) => void,
   handleDeleteMember: (id: number) => void
 ) => (
-  <>
+  <span style={{ whiteSpace: "nowrap" }}>
     <IconButton
       aria-label="edit"
       onClick={() => {
@@ -42,7 +42,7 @@ const MemberActions = (
     >
       <DeleteIcon />
     </IconButton>
-  </>
+  </span>
 );
 
 type Props = {
@@ -87,13 +87,15 @@ export default function CustomMembers({
       {customMembers.length > 0 && (
         <Box overflow="auto" padding={1}>
           <DataTableSimple
+            condensed
+            centered
             headerList={[
               "Member ID",
               `Start Node`,
               `End Node`,
               `Section Area (${areaUnit})`,
               `Elastic Modulus (${stressUnit})`,
-              "Actions (edit/delete)",
+              "Edit/Delete",
             ]}
             dataList={customMembers.map((member, index) => [
               index,

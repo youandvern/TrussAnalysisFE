@@ -90,9 +90,10 @@ const PrivacyStatement = () => (
 
 type PropsT = {
   updateForces: () => void;
+  filled?: boolean;
 };
 
-export default function CalculateOnEmailButton({ updateForces }: PropsT) {
+export default function CalculateOnEmailButton({ updateForces, filled }: PropsT) {
   const [openAlert, setOpenAlert] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatusT>("initial");
   const [errorMessage, setErrorMessage] = useState("");
@@ -181,7 +182,12 @@ export default function CalculateOnEmailButton({ updateForces }: PropsT) {
           )}
         </DialogContent>
       </Dialog>
-      <Button variant="outlined" fullWidth color="primary" onClick={handleCalculate}>
+      <Button
+        variant={filled ? "contained" : "outlined"}
+        fullWidth
+        color="primary"
+        onClick={handleCalculate}
+      >
         Calculate Forces
       </Button>
     </>

@@ -29,6 +29,8 @@ import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 import CustomNodes from "./CustomNodes/CustomNodes";
 import CustomMembers from "./CustomMembers/CustomMembers";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ErrorIcon from "@mui/icons-material/Error";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
   // Get spread of forces for color calculations
@@ -58,11 +60,7 @@ function CustomTabPanel(props: TabPanelProps) {
       aria-labelledby={`edit-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 1 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 1 }}>{children}</Box>}
     </div>
   );
 }
@@ -100,7 +98,6 @@ export default function CustomForm({
   startingNodes,
   startingMembers,
 }: Props) {
-  // TODO: handle errors and stability issues
   const [customNodes = startingNodes || [], setCustomNodes] = useQueryParam(
     "cnodes",
     QueryCustomNodesArray
@@ -110,7 +107,7 @@ export default function CustomForm({
     QueryCustomMembersArray
   );
 
-  const [isStable, setIsStable] = useState(false);
+  const [isStable, setIsStable] = useState<boolean>();
   const [customError, setCustomError] = useState<string>();
   const [customResults, setCustomResults] = useState<ApiCustomAnalysisResultsSuccess>();
 
@@ -263,6 +260,7 @@ export default function CustomForm({
         if (!result.success) {
           setCustomError(result.error);
         } else {
+          setCustomError(undefined);
           setShowMemberForces(result.isStable);
           setCustomResults(result);
         }
@@ -301,10 +299,10 @@ export default function CustomForm({
   return (
     <>
       <div className="not-calc-report">
-        <Grid container columnSpacing={2} rowSpacing={3}>
+        <Grid container columnSpacing={2} rowSpacing={3} marginTop={1}>
           <Grid item xs={12}>
             {isGeometryEntered ? (
-              <Box ref={graphGridRef} marginTop={4}>
+              <Box ref={graphGridRef}>
                 <TrussGraph
                   trussHeight={trussHeight}
                   trussWidth={trussWidth}
@@ -384,8 +382,43 @@ export default function CustomForm({
                 </CustomTabPanel>
               </Grid>
 
+              {isStable === false && (
+                <Grid item xs={12}>
+                  <Typography
+                    display="flex"
+                    color={(theme) => theme.palette.error.dark}
+                    padding={{ xs: 0, sm: 2 }}
+                  >
+                    <ErrorIcon /> Truss is not stable. Cannot complete analysis.
+                  </Typography>
+                </Grid>
+              )}
+
+              {customError && (
+                <Grid item xs={12}>
+                  <Typography
+                    display="flex"
+                    color={(theme) => theme.palette.error.dark}
+                    padding={{ xs: 0, sm: 2 }}
+                  >
+                    <ErrorIcon /> Error: {customError}
+                  </Typography>
+                </Grid>
+              )}
+
+              {customResults && (
+                <Typography
+                  display="flex"
+                  color={(theme) => theme.palette.success.dark}
+                  padding={{ xs: 0, sm: 2 }}
+                >
+                  <CheckCircleIcon /> Analysis succeeded! View member results below or display
+                  complete calculations and results by clicking "Show Calculations"
+                </Typography>
+              )}
+
               <Grid item xs={12} md={4}>
-                <CalculateOnEmailButton updateForces={updateMemberForcesCustom} />
+                <CalculateOnEmailButton updateForces={updateMemberForcesCustom} filled />
               </Grid>
               <Grid item xs={12} md={4}>
                 <Button
@@ -449,6 +482,7 @@ export default function CustomForm({
             reducedForceMatrix={customResults.reducedForceMatrix}
             useDefaultMemberProps={false}
             unitType={unitType}
+            reactions={customResults.reactions}
           />
         )}
       </div>

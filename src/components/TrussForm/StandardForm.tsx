@@ -452,7 +452,7 @@ export default function StandardForm({
   return (
     <>
       <div className="not-calc-report">
-        <Grid container columnSpacing={2} rowSpacing={3}>
+        <Grid container columnSpacing={2} rowSpacing={3} marginTop={1}>
           <Grid item xs={12}>
             {geometry && (
               <Box ref={graphGridRef}>

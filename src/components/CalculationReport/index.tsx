@@ -17,6 +17,16 @@ import {
   unitToAreaFactorInputToCalc,
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
+import { SupportReaction } from "../../Types/ApiAnalysisResults";
+
+const matrixNumTruncatorRelative0 = (val: number, absMax: number, precision?: number) => {
+  const relativeFactor = Math.abs(val) / absMax;
+  if (relativeFactor < 0.000001) {
+    return 0;
+  } else {
+    return matrixNumTruncator(val, precision);
+  }
+};
 
 const matrixNumTruncator = (val: number, precision?: number) =>
   +val.toPrecision(precision ? precision : 3) / 1;
@@ -97,9 +107,9 @@ interface CalcReportProps {
   reducedForceMatrix: number[];
   useDefaultMemberProps: boolean;
   unitType?: string;
+  reactions?: SupportReaction[];
 }
 
-// TODO: add section for reactions
 // Div holding calculation report
 export default function CalculationReport({
   geometryProps,
@@ -113,6 +123,7 @@ export default function CalculationReport({
   reducedForceMatrix,
   useDefaultMemberProps,
   unitType,
+  reactions,
 }: CalcReportProps) {
   const lengthUnit = unitToLength(unitType);
   const inputLengthUnit = unitToInputLength(unitType);
@@ -146,6 +157,17 @@ export default function CalculationReport({
     row.map((val) => matrixNumTruncator(val))
   );
   const fReduced = [reducedForceMatrix.map((val) => matrixNumTruncator(val))];
+  const absMaxReaction =
+    reactions?.reduce(
+      (max, reaction) => Math.max(Math.abs(reaction.x), Math.abs(reaction.y), max),
+      0
+    ) || 0;
+  const roundedReactions =
+    reactions?.map((r) => ({
+      ...r,
+      x: matrixNumTruncatorRelative0(r.x, absMaxReaction, 4),
+      y: matrixNumTruncatorRelative0(r.y, absMaxReaction, 4),
+    })) || [];
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
@@ -370,9 +392,13 @@ export default function CalculationReport({
       {caption("Structural Load Matrix (reduced)")}
       <h4>3.5 Analysis for global displacements</h4>
       <p>
-        The global nodal displacements are calculated by inverting the reduced stiffness matrix and
+        The unknown nodal displacements are calculated by inverting the reduced stiffness matrix and
         multiplying it with the reduced structure force matrix: K<sub>R</sub>
         <sup>-1</sup> &#183; Q<sub>R</sub>
+      </p>
+      <p>
+        Then, the known support displacements of 0 are added to compose the global stiffness matrix,
+        D.
       </p>
       {useDefaultMemberProps && (
         <p>
@@ -393,7 +419,7 @@ export default function CalculationReport({
         headerList={["Node ID", `Δx (${lengthUnit})`, `Δy (${lengthUnit})`]}
         dataList={arrayToMatrix(displacements)}
       />
-      {caption("Table 4: Structure node displacements")}
+      {caption("Table 4: Structure node displacements derived from global stiffness matrix")}
       <h4>3.6 Calculate member axial demands</h4>
       <p>
         Using the relative displacements of each member's start and end nodes along with a
@@ -458,6 +484,30 @@ export default function CalculationReport({
         ])}
       />
       {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}
+
+      {reactions && (
+        <>
+          <h4>3.7 Calculate support reactions</h4>
+          <p>
+            First, the unknown values in the global force matrix, Q, is assembled by multiplying the
+            global stiffness matrix by the global displacement matrix: Q = K &#183; D{" "}
+          </p>
+          <p>
+            The total force at the truss supports are then found by removing all of the free degrees
+            of freedom (reduced structural load matrix, Q<sub>R</sub>) from the force matrix so that
+            only the supported degrees of freedom remain.
+          </p>
+          <p>
+            Finally, to calculate the supports, any loads applied to the supports are subtracted out
+            of this reduced force matrix yielding the following support reactions:
+          </p>
+          <DataTableSimple
+            headerList={["Node ID", `Rx (${forceUnit})`, `Ry (${forceUnit})`]}
+            dataList={roundedReactions.map((r) => [r.index, r.x, r.y])}
+          />
+          {caption("Table 6: Structure support reaction summary")}
+        </>
+      )}
 
       <Typography marginTop="3rem" textAlign="right">
         Powered by{" "}

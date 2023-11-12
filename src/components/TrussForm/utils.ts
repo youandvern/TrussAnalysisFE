@@ -40,3 +40,6 @@ export function csvToArray(text: string) {
   }
   return ret;
 }
+
+export const numTruncator = (val: number, precision?: number) =>
+  +val.toPrecision(precision ? precision : 3) / 1;
