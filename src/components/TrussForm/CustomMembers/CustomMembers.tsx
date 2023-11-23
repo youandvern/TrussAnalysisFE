@@ -76,7 +76,7 @@ export default function CustomMembers({
   };
 
   const onSubmitEdit = (member: CustomMember) => {
-    if (currentMemberIndex) {
+    if (currentMemberIndex !== undefined) {
       handleEditMember(currentMemberIndex, member);
       onCloseEdit();
     }

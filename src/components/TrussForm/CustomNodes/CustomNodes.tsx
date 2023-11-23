@@ -75,7 +75,7 @@ export default function CustomNodes({
   };
 
   const onSubmitEdit = (node: CustomNode) => {
-    if (currentNodeIndex) {
+    if (currentNodeIndex !== undefined) {
       handleEditNode(currentNodeIndex, node);
       onCloseEdit();
     }
