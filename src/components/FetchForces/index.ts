@@ -70,6 +70,7 @@ export const FetchForces = (
         structureStiffnessMatrix: unparsed_data.structureStiffnessMatrix,
         structureReducedStiffnessMatrix: unparsed_data.structureReducedStiffnessMatrix,
         reducedForceMatrix: unparsed_data.reducedForceMatrix,
+        reactions: unparsed_data.reactions,
       };
       show = true;
     }

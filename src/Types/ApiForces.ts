@@ -1,5 +1,6 @@
 import { Nodes, Members } from "./ApiGeometry";
 import { memberNodesFormatter } from "../components/Utilities/memberNodesFormatter";
+import { SupportReaction } from "./ApiAnalysisResults";
 
 export default interface ApiForces {
   nodes: Nodes;
@@ -11,6 +12,7 @@ export default interface ApiForces {
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
+  reactions?: SupportReaction[];
 }
 
 export interface ApiForcesParsed {
@@ -21,6 +23,7 @@ export interface ApiForcesParsed {
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
+  reactions?: SupportReaction[];
 }
 
 export interface NodeForceControlled {
@@ -67,6 +70,18 @@ export const emptyApiForces = {
     [0, 0],
   ],
   reducedForceMatrix: [0, 0, 0, 0],
+  reactions: [
+    {
+      index: 0,
+      x: -4.263256414560601e-14,
+      y: 50.00000000000006,
+    },
+    {
+      index: 7,
+      x: 0,
+      y: 50.00000000000006,
+    },
+  ],
 } as ApiForces;
 
 export const emptyApiForcesParsed = {

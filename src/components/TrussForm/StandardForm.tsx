@@ -664,6 +664,7 @@ export default function StandardForm({
             reducedForceMatrix={standardizedForceResults.reducedForceMatrix}
             useDefaultMemberProps={useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : false}
             unitType={unitType}
+            reactions={standardizedForceResults.reactions}
           />
         )}
       </div>
