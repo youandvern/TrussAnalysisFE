@@ -41,6 +41,7 @@ export default function EditMemberForm({
             label="starting node"
             value={start}
             onChange={(e) => setStart(+e.target.value)}
+            unit=""
             min={0}
             max={999}
           />
@@ -50,6 +51,7 @@ export default function EditMemberForm({
             label="ending node"
             value={end}
             onChange={(e) => setEnd(+e.target.value)}
+            unit=""
             min={0}
             max={999}
           />
