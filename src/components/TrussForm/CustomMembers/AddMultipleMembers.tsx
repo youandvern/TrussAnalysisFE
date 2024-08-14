@@ -1,10 +1,11 @@
-import { Button, Stack, TextField, Typography } from "@mui/material";
-import { CustomMember } from "../../../Types/ApiAnalysisResults";
-import { useState } from "react";
-import { csvToArray } from "../utils";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import { Button, Stack, TextField, Typography } from "@mui/material";
+import { useState } from "react";
+import { CustomMember } from "../../../Types/ApiAnalysisResults";
 import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
+import { csvToArray } from "../utils";
+import { validateMember } from "./member-validator";
 
 const EXAMPLE_CSV = (
   <Typography>
@@ -41,30 +42,13 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
       return true;
     }
 
-    if (!Number.isInteger(+row[0]) || !Number.isInteger(+row[1]) || +row[0] < 0 || +row[1] < 0) {
-      setErrorMesage(
-        `Member ${
-          rowIndex + 1
-        } out of ${rowCount}: start and end nodes must be positive integers or zero`
-      );
+    const validatedMember = validateMember(nodeCount, row[0], row[1], row[2], row[3]);
+    if (!validatedMember.valid) {
+      setErrorMesage(`Member ${rowIndex + 1} out of ${rowCount}: ${validatedMember.error}`);
       return true;
     }
 
-    if (+row[0] > nodeCount - 1 || +row[1] > nodeCount - 1) {
-      setErrorMesage(
-        `Member ${
-          rowIndex + 1
-        } out of ${rowCount}: start and end nodes must match a current node id`
-      );
-      return true;
-    }
-
-    if (Number.isNaN(+row[2]) || Number.isNaN(+row[3] || +row[2] <= 0 || +row[3] <= 0)) {
-      setErrorMesage(
-        `Member ${rowIndex + 1} out of ${rowCount}: A and E must be positive non-zero numbers`
-      );
-      return true;
-    }
+    return false;
   };
 
   const isInputArrayValid = (inputArray: string[][]) => {

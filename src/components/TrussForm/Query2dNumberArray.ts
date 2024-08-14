@@ -7,11 +7,11 @@ const COLUMN_DELIMITER = "_";
 /**
  * Encodes a 2D array as a delimited JSON string.
  *
- * @param {Number[][]} array The array to be encoded
+ * @param {String[][]} array The array to be encoded
  * @return {String} The array as a delimited string
  */
 function encodeNumeric2DArrayDelimited(
-  array: number[][] | null | undefined
+  array: string[][] | null | undefined
 ): string | null | undefined {
   if (array == null) {
     return array;
@@ -31,17 +31,15 @@ function encodeNumeric2DArrayDelimited(
  */
 function decodeNumeric2DArrayDelimited(
   input: string | (string | null)[] | null | undefined
-): number[][] | null | undefined {
+): string[][] | null | undefined {
   const arrayStr = input instanceof Array ? input[0] : input;
   if (arrayStr == null || arrayStr === "") return null;
 
-  return arrayStr
-    .split(ROW_DELIMITER)
-    .map((innerString) => innerString.split(COLUMN_DELIMITER).map(Number));
+  return arrayStr.split(ROW_DELIMITER).map((innerString) => innerString.split(COLUMN_DELIMITER));
 }
 
 export const Query2dNumberArray = {
-  encode: (array: number[][] | null | undefined) => encodeNumeric2DArrayDelimited(array),
+  encode: (array: string[][] | null | undefined) => encodeNumeric2DArrayDelimited(array),
   decode: (arrayStr: string | (string | null)[] | null | undefined) =>
     decodeNumeric2DArrayDelimited(arrayStr),
 };

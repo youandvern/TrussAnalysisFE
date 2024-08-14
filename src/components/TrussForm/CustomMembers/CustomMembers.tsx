@@ -1,3 +1,6 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
   AccordionDetails,
@@ -9,16 +12,13 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import DataTableSimple from "../../DataTableSimple";
-import { CustomMember } from "../../../Types/ApiAnalysisResults";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import AddOneMember from "./AddOneMember";
-import AddMultipleMembers from "./AddMultipleMembers";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useState } from "react";
-import EditMemberForm from "./EditMemberForm";
+import { CustomMember } from "../../../Types/ApiAnalysisResults";
+import DataTableSimple from "../../DataTableSimple";
 import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
+import AddMultipleMembers from "./AddMultipleMembers";
+import AddOneMember from "./AddOneMember";
+import EditMemberForm from "./EditMemberForm";
 
 const MemberActions = (
   memberIndex: number,
@@ -114,7 +114,7 @@ export default function CustomMembers({
           <Typography fontWeight="bold">Add one Member</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <AddOneMember unitType={unitType} onCreate={handleAddMembers} />
+          <AddOneMember unitType={unitType} onCreate={handleAddMembers} nodeCount={nodeCount} />
         </AccordionDetails>
       </Accordion>
 
@@ -140,6 +140,7 @@ export default function CustomMembers({
               currentEnd={customMembers[currentMemberIndex].end}
               currentA={customMembers[currentMemberIndex].A}
               currentE={customMembers[currentMemberIndex].E}
+              nodeCount={nodeCount}
               unitType={unitType}
               onSubmit={onSubmitEdit}
               onClose={onCloseEdit}

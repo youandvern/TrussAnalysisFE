@@ -1,5 +1,4 @@
-import ApiGeometry from "../../Types/ApiGeometry";
-import { ApiGeometryGlobal } from "../../Types/ApiGeometry";
+import ApiGeometry, { ApiGeometryGlobal } from "../../Types/ApiGeometry";
 
 export const API_URL = "https://api.encompapp.com";
 // export const API_URL = "http://127.0.0.1:8000";

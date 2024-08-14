@@ -1,11 +1,11 @@
+import { FormControl, InputAdornment, InputLabel, OutlinedInput, Tooltip } from "@mui/material/";
 import React from "react";
 import "./style.css";
-import { FormControl, InputLabel, OutlinedInput, InputAdornment, Tooltip } from "@mui/material/";
 
 // expected properties given to NumInput
 interface NumProps {
   label?: string;
-  value?: number;
+  value?: number | string;
   onChange?: (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   unit?: string;
   toolTip?: string;
@@ -41,7 +41,7 @@ export default function NumInput({
           // add unit to the end
           endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
           aria-describedby="standard-weight-helper-text"
-          type="number"
+          error={value == null ? false : isNaN(+value)}
           inputProps={{
             min: min,
             max: max,
@@ -64,7 +64,7 @@ export function NumInputSimple({ value = 0, onChange, unit, min, max, step }: Nu
       // add unit to the end
       endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
       aria-describedby="standard-weight-helper-text"
-      type="number"
+      error={value == null ? false : isNaN(+value)}
       inputProps={{
         min: min,
         max: max,

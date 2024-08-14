@@ -41,5 +41,14 @@ export function csvToArray(text: string) {
   return ret;
 }
 
+type Numberish = string | number | null | undefined;
+
 export const numTruncator = (val: number, precision?: number) =>
   +val.toPrecision(precision ? precision : 3) / 1;
+
+export const numberValOrDefault = (val: Numberish, fallback: number) =>
+  val != null ? +val : fallback;
+
+export const isNotNumber = (val: Numberish) => (val == null ? true : isNaN(+val));
+
+export const allNumbers = (vals: Numberish[]) => !vals.some(isNotNumber);

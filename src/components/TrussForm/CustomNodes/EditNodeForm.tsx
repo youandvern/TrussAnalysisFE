@@ -1,8 +1,9 @@
-import { Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
+import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
+import { FormEvent, useState } from "react";
 import { CustomNode, SupportType } from "../../../Types/ApiAnalysisResults";
 import NumInput from "../../NumInput";
-import { FormEvent, useState } from "react";
 import { unitToForce, unitToLength } from "../../UnitSelector";
+import { allNumbers } from "../utils";
 
 type Props = {
   currentX: number;
@@ -25,25 +26,37 @@ export default function EditNodeForm({
   onSubmit,
   onClose,
 }: Props) {
-  const [x, setX] = useState(currentX);
-  const [y, setY] = useState(currentY);
+  const [x, setX] = useState(`${currentX}`);
+  const [y, setY] = useState(`${currentY}`);
   const [support, setSupport] = useState<SupportType>(currentSupport || "free");
-  const [Fx, setFx] = useState(currentFx || 0);
-  const [Fy, setFy] = useState(currentFy || 0);
+  const [Fx, setFx] = useState(`${currentFx || 0}`);
+  const [Fy, setFy] = useState(`${currentFy || 0}`);
+  const [validationError, setValidationError] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    onSubmit({ x: x || 0, y: y || 0, support: support || "free", Fx: Fx || 0, Fy: Fy || 0 });
+
+    if (allNumbers([x, y, Fx, Fy])) {
+      setValidationError("");
+      onSubmit({ x: +x || 0, y: +y || 0, support: support || "free", Fx: +Fx || 0, Fy: +Fy || 0 });
+    } else {
+      setValidationError("All input values must be a valid number");
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} style={{ margin: "0.5rem" }}>
       <Grid container columnSpacing={2} rowSpacing={3} sx={{ borderRadius: 1 }}>
+        {validationError && (
+          <Grid item xs={12}>
+            <Alert severity="error">{validationError}</Alert>
+          </Grid>
+        )}
         <Grid item xs={6}>
           <NumInput
             label="x-position"
             value={x}
-            onChange={(e) => setX(+e.target.value)}
+            onChange={(e) => setX(e.target.value)}
             unit={unitToLength(unitType)}
             min={-999999}
             max={999999}
@@ -54,7 +67,7 @@ export default function EditNodeForm({
           <NumInput
             label="y-position"
             value={y}
-            onChange={(e) => setY(+e.target.value)}
+            onChange={(e) => setY(e.target.value)}
             unit={unitToLength(unitType)}
             min={-999999}
             max={999999}
@@ -83,7 +96,7 @@ export default function EditNodeForm({
           <NumInput
             label="Fx"
             value={Fx}
-            onChange={(e) => setFx(+e.target.value)}
+            onChange={(e) => setFx(e.target.value)}
             unit={unitToForce(unitType)}
             min={-999999}
             max={999999}
@@ -94,7 +107,7 @@ export default function EditNodeForm({
           <NumInput
             label="Fy"
             value={Fy}
-            onChange={(e) => setFy(+e.target.value)}
+            onChange={(e) => setFy(e.target.value)}
             unit={unitToForce(unitType)}
             min={-999999}
             max={999999}

@@ -1,9 +1,9 @@
-import React from "react";
 import { Checkbox, FormControlLabel, FormGroup, FormLabel, Grid } from "@mui/material/";
-import "./style.css";
+import React from "react";
+import { GLOBAL_THEME } from "../../App";
 import NumInput from "../NumInput";
 import { unitToInputArea, unitToInputStress } from "../UnitSelector";
-import { GLOBAL_THEME } from "../../App";
+import "./style.css";
 
 const AREA_LABEL = "Member Area";
 const AREA_TOOLTIP = "Cross-sectional Area, A";
@@ -18,16 +18,22 @@ export interface MemberPropsType {
   web: number;
 }
 
+export interface MemberInputPropsType {
+  top: string;
+  bot: string;
+  web: string;
+}
+
 // expected component properties
 interface MemberPropertiesProps {
   useDefault: boolean;
   setUseDefault: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  areaProps: MemberPropsType;
+  areaProps: MemberInputPropsType;
   setAreaProps: (
     memberType: string,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
-  eModulusProps: MemberPropsType;
+  eModulusProps: MemberInputPropsType;
   setEModProps: (
     memberType: string,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -1,37 +1,42 @@
-import React, { useCallback } from "react";
-import { useState, useEffect } from "react";
-import { BooleanParam, NumberParam, NumericObjectParam, useQueryParam } from "use-query-params";
-import "./style.css";
-import { Grid, Button, Box, Typography, useMediaQuery, Theme, Tabs, Tab } from "@mui/material";
-import TrussGraph from "../TrussGraph";
-import { Nodes, Members } from "../../Types/ApiGeometry";
-import MemberForceResults from "../MemberForceResults";
-import { dataToColorScale } from "../Utilities/DataToColorscale";
-import CalculationReport from "../CalculationReport";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ErrorIcon from "@mui/icons-material/Error";
+import { Box, Button, Grid, Tab, Tabs, Theme, Typography, useMediaQuery } from "@mui/material";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  unitToAreaFactorInputToCalc,
-  unitToForce,
-  unitToLength,
-  unitToStressFactorInputToCalc,
-} from "../UnitSelector";
-import CalculateOnEmailButton from "../CalculateOnEmailButton";
-import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
-import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
+  BooleanParam,
+  NumberParam,
+  NumericObjectParam,
+  StringParam,
+  useQueryParam,
+} from "use-query-params";
 import {
   ApiCustomAnalysisResultsSuccess,
   CustomMember,
   CustomNode,
   MemberAnalysisResults,
 } from "../../Types/ApiAnalysisResults";
+import { Members, Nodes } from "../../Types/ApiGeometry";
+import CalculateOnEmailButton from "../CalculateOnEmailButton";
+import CalculationReport from "../CalculationReport";
 import { FetchCustomAnalysis } from "../FetchCustomAnalysis";
-import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
+import MemberForceResults from "../MemberForceResults";
+import TrussGraph from "../TrussGraph";
+import {
+  unitToAreaFactorInputToCalc,
+  unitToForce,
+  unitToLength,
+  unitToStressFactorInputToCalc,
+} from "../UnitSelector";
+import { dataToColorScale } from "../Utilities/DataToColorscale";
 import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
-import CustomNodes from "./CustomNodes/CustomNodes";
 import CustomMembers from "./CustomMembers/CustomMembers";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ErrorIcon from "@mui/icons-material/Error";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CustomNodes from "./CustomNodes/CustomNodes";
 import { Query2dNumberArray } from "./Query2dNumberArray";
+import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
+import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
+import "./style.css";
+import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
 
 const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
   // Get spread of forces for color calculations
@@ -99,9 +104,9 @@ export default function CustomForm({
   startingMembers,
 }: Props) {
   // Standard form query params to clean up
-  const [_sp_none, setSpan] = useQueryParam("span", NumberParam);
-  const [_he_none, setHeight] = useQueryParam("height", NumberParam);
-  const [_de_none, setDepth] = useQueryParam("depth", NumberParam);
+  const [_sp_none, setSpan] = useQueryParam("span", StringParam);
+  const [_he_none, setHeight] = useQueryParam("height", StringParam);
+  const [_de_none, setDepth] = useQueryParam("depth", StringParam);
   const [_nW_none, setNWeb] = useQueryParam("nWeb", NumberParam);
   const [_el_none, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
   const [_ar_none, setAreaProps] = useQueryParam("area", NumericObjectParam);

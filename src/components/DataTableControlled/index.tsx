@@ -1,16 +1,16 @@
-import React from "react";
-import "./style.css";
 import {
-  TableContainer,
-  Typography,
+  Paper,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  Paper,
-  TableBody,
+  Typography,
 } from "@mui/material/";
+import React from "react";
 import { NumInputSimple } from "../NumInput";
+import "./style.css";
 
 // expected properties given to DataTable
 interface TableProps {
@@ -52,9 +52,7 @@ export default function DataTable({
           {dataList.map((row, rindex) => (
             <TableRow key={"datarow" + rindex}>
               {row.map((cell, cindex) => {
-                return !setDataList ||
-                  typeof cell !== "number" ||
-                  (cindex === 0 && !firstColumnEditable) ? (
+                return !setDataList || (cindex === 0 && !firstColumnEditable) ? (
                   <TableCell key={"data" + rindex + "-" + cindex}>
                     <Typography>{cell}</Typography>
                   </TableCell>
