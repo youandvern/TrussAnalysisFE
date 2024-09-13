@@ -1,9 +1,9 @@
-import { Button, Stack, TextField, Typography } from "@mui/material";
-import { CustomNode, SupportType, supportTypes } from "../../../Types/ApiAnalysisResults";
-import { useState } from "react";
-import { csvToArray } from "../utils";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import { Button, Stack, TextField, Typography } from "@mui/material";
+import { useState } from "react";
+import { CustomNode, SupportType, supportTypes } from "../../../Types/ApiAnalysisResults";
+import { csvToArray } from "../utils";
 
 const EXAMPLE_CSV = (
   <Typography>
@@ -14,11 +14,15 @@ const EXAMPLE_CSV = (
 );
 
 const stringToSupportType = (typeish: string): SupportType => {
-  if (typeish.trim() === "pin") {
+  const standardizedType = typeish.trim().replace("-", "").toLowerCase();
+  if (standardizedType === "pin") {
     return "pin";
   }
-  if (typeish.trim() === "roller") {
+  if (standardizedType === "roller") {
     return "roller";
+  }
+  if (standardizedType === "yroller") {
+    return "yroller";
   }
   return "free";
 };
@@ -108,8 +112,8 @@ export default function AddMultipleNodes({ onCreate, lengthUnit, forceUnit }: Pr
         </Typography>
         <Typography fontWeight="bold">{headers}</Typography>
         <Typography>
-          Note that the support type must be <i>pin</i>, <i>free</i>, or <i>roller</i>. The
-          direction for Fy is the direction of gravity (downward is positive).
+          Note that the support type must be <i>pin</i>, <i>free</i>, <i>roller</i>, or{" "}
+          <i>y-roller</i>. The direction for Fy is the direction of gravity (downward is positive).
         </Typography>
         <Typography>For example:</Typography>
         <Typography

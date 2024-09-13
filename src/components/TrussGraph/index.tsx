@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { Arrow, Circle, Label, Layer, Line, Rect, Stage, Tag, Text } from "react-konva";
 import "./style.css";
-import { Stage, Layer, Line, Circle, Text, Label, Tag, Arrow, Rect } from "react-konva";
 
+import { GLOBAL_THEME } from "../../App";
+import { MemberForcesSummary } from "../../Types/ApiForces";
 import { Members, Nodes } from "../../Types/ApiGeometry";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { MemberForcesSummary } from "../../Types/ApiForces";
-import { GLOBAL_THEME } from "../../App";
 
 // force the truss to start at (0, 0)
 function getPositionCorrectedNodes(nodes: Nodes): Nodes {
@@ -228,6 +228,28 @@ export default function TrussGraph({
     );
   };
 
+  const yRollerMarker = (xp: number, yp: number, rSize: number) => {
+    return (
+      <>
+        <Line
+          key={`${keySeed}-yroll1-${xp},${yp}`}
+          points={[xp + 3 * rSize, -1 * yp - 3 * rSize, xp + 3 * rSize, -1 * yp + 3 * rSize]}
+          stroke={GLOBAL_THEME.palette.secondary.main}
+          strokeWidth={rSize}
+          fillAfterStrokeEnabled
+        />
+        <Circle
+          key={`${keySeed}-yroll2-${xp},${yp}`}
+          x={xp + rSize}
+          y={-1 * yp}
+          radius={rSize * 1.25}
+          stroke={GLOBAL_THEME.palette.secondary.main}
+          strokeWidth={rSize}
+        />
+      </>
+    );
+  };
+
   const nodeLabel = (x: number, y: number, i: string, offSet: number) => {
     const yOffset = y === 0 && !(x === 0 || x === trussWidth * fscale) ? offSet * -1 : offSet * 4;
     return (
@@ -307,6 +329,8 @@ export default function TrussGraph({
                 pinMarker(nodeX, nodeY - nodeSizeScaled / 2, nodeSizeScaled)}
               {node.fixity === "roller" &&
                 rollerMarker(nodeX, nodeY - nodeSizeScaled, nodeSizeScaled)}
+              {node.fixity === "yroller" &&
+                yRollerMarker(nodeX + nodeSizeScaled, nodeY, nodeSizeScaled)}
               {thisNodeForce &&
                 forceArrows(nodeX, -nodeY, thisNodeForce[1], thisNodeForce[2], 4 * nodeSizeScaled)}
               <Circle

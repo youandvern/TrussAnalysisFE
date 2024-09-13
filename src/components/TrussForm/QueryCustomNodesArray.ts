@@ -1,13 +1,13 @@
 import { CustomNode, SupportType } from "../../Types/ApiAnalysisResults";
 
-type MinSupportType = "p" | "r" | "f";
+type MinSupportType = "p" | "r" | "f" | "y";
 
 function minimizeSupportType(type?: SupportType): MinSupportType {
-  return type === "roller" ? "r" : type === "pin" ? "p" : "f";
+  return type === "roller" ? "r" : type === "pin" ? "p" : type === "yroller" ? "y" : "f";
 }
 
 function maximizeMinSupportType(type?: string): SupportType {
-  return type === "r" ? "roller" : type === "p" ? "pin" : "free";
+  return type === "r" ? "roller" : type === "p" ? "pin" : type === "y" ? "yroller" : "free";
 }
 
 function stringArrayToNode(ar?: string[]): CustomNode {

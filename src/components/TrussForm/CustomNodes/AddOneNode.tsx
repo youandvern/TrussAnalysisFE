@@ -76,6 +76,7 @@ export default function AddOneNode({ onCreate, unitType }: Props) {
               <MenuItem value={"free"}>Free</MenuItem>
               <MenuItem value={"pin"}>Pinned</MenuItem>
               <MenuItem value={"roller"}>Roller</MenuItem>
+              <MenuItem value={"yroller"}>Y-Roller</MenuItem>
             </Select>
           </FormControl>
         </Grid>

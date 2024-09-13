@@ -1,4 +1,4 @@
-export const supportTypes = ["pin", "roller", "free"] as const;
+export const supportTypes = ["pin", "roller", "free", "yroller"] as const;
 export type SupportType = (typeof supportTypes)[number];
 
 export type CustomNode = {

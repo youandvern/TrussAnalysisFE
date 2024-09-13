@@ -447,6 +447,10 @@ export default function StandardForm({
       debounce(
         (span1: number, height1: number, nWeb1: number, depth1: number, trussType1: string) => {
           if (allNumbers([span1, height1, nWeb1, depth1])) {
+            if (+span1 === 0 || height1 === 0 || depth1 === 0) {
+              setValidationError("Span, height, and depth must be non-zero");
+              return;
+            }
             clearValidationError();
           } else {
             setValidationError(VALIDATION_ERROR);
