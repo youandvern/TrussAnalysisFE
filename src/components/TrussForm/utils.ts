@@ -52,3 +52,8 @@ export const numberValOrDefault = (val: Numberish, fallback: number) =>
 export const isNotNumber = (val: Numberish) => (val == null ? true : isNaN(+val));
 
 export const allNumbers = (vals: Numberish[]) => !vals.some(isNotNumber);
+
+export const distanceBetweenPoints = (x1: number, y1: number, x2: number, y2: number) =>
+  Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+export const distanceAlongAxis = (x1: number, x2: number) => Math.abs(x2 - x1);

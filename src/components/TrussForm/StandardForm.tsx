@@ -36,7 +36,6 @@ import MemberPropertiesForm, {
 } from "../MemberPropertiesForm";
 import NumInput from "../NumInput";
 import NumSlider from "../NumSlider";
-import RowForm from "../RowForm";
 import { TrussCategory } from "../TrussCategorySelector";
 import TrussGraph from "../TrussGraph";
 import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
@@ -47,11 +46,14 @@ import {
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
+import LinearLoadForm, { LoadApplication, NodeGroup, OptionalForces } from "./LinearLoadForm";
 import { Query2dNumberArray } from "./Query2dNumberArray";
 import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
 import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
 import {
   allNumbers,
+  distanceAlongAxis,
+  distanceBetweenPoints,
   hideCalculationsDiv,
   numberValOrDefault,
   printPdf,
@@ -173,8 +175,6 @@ export default function StandardForm({
   const [expandTrussLoads, setExpandTrussLoads] = useState(false);
   const [expandSectionProperties, setExpandSectionProperties] = useState(false);
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
-  const setTopForcesForm = useRef(null);
-  const setBotForcesForm = useRef(null);
 
   const includeDepth = isDepthRelevant(trussType || "");
 
@@ -379,31 +379,106 @@ export default function StandardForm({
     });
   };
 
-  const handleSetNodeForces = (nodeIds?: number[], formRef?: React.MutableRefObject<null>) => {
-    const form = formRef ? formRef.current : null;
-    if (nodeIds && form) {
-      const fx = form["Fx"]["value"] || "0";
-      const fy = form["Fy"]["value"] || "0";
+  const handleDistributeLoad = (
+    linearForce: OptionalForces,
+    nodes: NodeGroup,
+    loadApplication: LoadApplication
+  ) => {
+    const nodeIds = (nodes === "top" ? geometry?.topNodeIds : geometry?.botNodeIds) || [];
+    const nodeLoads = spreadLoad(nodeIds, linearForce, loadApplication);
 
-      setForces((oldForces) => {
-        const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
-          if (nodeIds.includes(rindex)) {
-            const newRow = [...rowArray];
+    if (nodeLoads) setNodeForces(nodeLoads);
+  };
 
-            newRow[1] = fx;
-            newRow[2] = fy;
-            return newRow;
-          }
-          return rowArray;
-        });
-        forcesRef.current = [...newForces];
-        return newForces;
-      });
-      handleHideAllResults();
-      clearValidationError();
-    } else {
-      console.log("Error: nodes not found.");
+  // Distribute line load to nodes
+  const spreadLoad = (
+    nodeIds: number[],
+    forcePerLength: OptionalForces,
+    loadApplication: LoadApplication
+  ) => {
+    if (!geometry?.nodes) return;
+
+    const nodeLoads = {} as { [key: number]: OptionalForces };
+    for (let i = 0; i < nodeIds.length; i++) {
+      let nodeLoadX;
+      let nodeLoadY;
+
+      if (loadApplication === "member-length") {
+        let prevLength = 0;
+        let nextLength = 0;
+
+        const currentNode = geometry.nodes[`${nodeIds[i]}`];
+        const prevNode = i > 0 ? geometry.nodes[`${nodeIds[i - 1]}`] : null;
+        const nextNode = i < nodeIds.length ? geometry.nodes[`${nodeIds[i + 1]}`] : null;
+
+        if (prevNode) {
+          prevLength = distanceBetweenPoints(prevNode.x, prevNode.y, currentNode.x, currentNode.y);
+        }
+
+        if (nextNode) {
+          nextLength = distanceBetweenPoints(currentNode.x, currentNode.y, nextNode.x, nextNode.y);
+        }
+
+        const tributaryLength = (prevLength + nextLength) / 2;
+
+        nodeLoadX = forcePerLength.fx != null ? tributaryLength * forcePerLength.fx : undefined;
+        nodeLoadY = forcePerLength.fy != null ? tributaryLength * forcePerLength.fy : undefined;
+      } else {
+        let prevDistX = 0;
+        let prevDistY = 0;
+        let nextDistX = 0;
+        let nextDistY = 0;
+
+        const currentNode = geometry.nodes[`${nodeIds[i]}`];
+        const prevNode = i > 0 ? geometry.nodes[`${nodeIds[i - 1]}`] : null;
+        const nextNode = i < nodeIds.length ? geometry.nodes[`${nodeIds[i + 1]}`] : null;
+
+        if (prevNode) {
+          prevDistX = distanceAlongAxis(prevNode.x, currentNode.x);
+          prevDistY = distanceAlongAxis(prevNode.y, currentNode.y);
+        }
+
+        if (nextNode) {
+          nextDistX = distanceAlongAxis(nextNode.x, currentNode.x);
+          nextDistY = distanceAlongAxis(nextNode.y, currentNode.y);
+        }
+
+        const tributaryLengthX = (prevDistX + nextDistX) / 2;
+        const tributaryLengthY = (prevDistY + nextDistY) / 2;
+
+        nodeLoadX = forcePerLength.fx != null ? tributaryLengthY * forcePerLength.fx : undefined;
+        nodeLoadY = forcePerLength.fy != null ? tributaryLengthX * forcePerLength.fy : undefined;
+      }
+
+      nodeLoads[nodeIds[i]] = { fx: nodeLoadX, fy: nodeLoadY };
     }
+
+    return nodeLoads;
+  };
+
+  const setNodeForces = (nodeForces: { [key: number]: OptionalForces }) => {
+    setForces((oldForces) => {
+      const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
+        const nodeIndex = rindex;
+        if (nodeIndex in nodeForces) {
+          const newRow = [...rowArray];
+          const forces = nodeForces[nodeIndex];
+
+          const fx = forces.fx ?? newRow[1];
+          const fy = forces.fy ?? newRow[2];
+
+          newRow[1] = `${fx}`;
+          newRow[2] = `${fy}`;
+          return newRow;
+        }
+        return rowArray;
+      });
+      forcesRef.current = [...newForces];
+      return newForces;
+    });
+
+    handleHideAllResults();
+    clearValidationError();
   };
 
   const handleUseDefaultMember = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -612,30 +687,17 @@ export default function StandardForm({
                     <Typography>Truss Loading</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <RowForm
-                      formRef={setTopForcesForm}
-                      onSubmit={() => handleSetNodeForces(geometry?.topNodeIds, setTopForcesForm)}
-                      buttonTitle="Top Nodes:"
-                      inputLabel1="Fx"
-                      inputUnit1={forceUnit}
-                      inputLabel2="Fy"
-                      inputUnit2={forceUnit}
-                    />
-                    <RowForm
-                      formRef={setBotForcesForm}
-                      onSubmit={() => handleSetNodeForces(geometry?.botNodeIds, setBotForcesForm)}
-                      buttonTitle="Bottom Nodes:"
-                      inputLabel1="Fx"
-                      inputUnit1={forceUnit}
-                      inputLabel2="Fy"
-                      inputUnit2={forceUnit}
+                    <LinearLoadForm
+                      forceUnit={forceUnit}
+                      lengthUnit={unitToLength(unitType)}
+                      applyLoads={handleDistributeLoad}
                     />
                     <Button
                       variant="outlined"
                       fullWidth
                       color="primary"
                       onClick={resetForces}
-                      sx={{ height: "100%", marginBottom: "2em" }}
+                      sx={{ height: "100%", marginY: "2em" }}
                     >
                       Reset Forces to Zero
                     </Button>
