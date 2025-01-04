@@ -4,6 +4,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import { Box, Button, Grid, Tab, Tabs, Theme, Typography, useMediaQuery } from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  ArrayParam,
   BooleanParam,
   NumberParam,
   NumericObjectParam,
@@ -15,6 +16,7 @@ import {
   CustomMember,
   CustomNode,
   MemberAnalysisResults,
+  MemberGroup,
 } from "../../Types/ApiAnalysisResults";
 import { Members, Nodes } from "../../Types/ApiGeometry";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
@@ -83,18 +85,23 @@ type Props = {
   showNodeLabels: boolean;
   showMemberLabels: boolean;
   showForceArrows: boolean;
+  showMemberGroups: boolean;
+  setShowMemberGroups: React.Dispatch<React.SetStateAction<boolean>>;
   frameWidth: number;
   frameHeight: number;
   graphGridRef: React.RefObject<HTMLDivElement>;
   onRenderGraph: () => void;
   startingNodes?: CustomNode[];
   startingMembers?: CustomMember[];
+  startingMemberGroups?: string[];
 };
 
 export default function CustomForm({
   showNodeLabels,
   showMemberLabels,
   showForceArrows,
+  showMemberGroups,
+  setShowMemberGroups,
   unitType,
   frameWidth,
   frameHeight,
@@ -102,6 +109,7 @@ export default function CustomForm({
   onRenderGraph,
   startingNodes,
   startingMembers,
+  startingMemberGroups,
 }: Props) {
   // Standard form query params to clean up
   const [_sp_none, setSpan] = useQueryParam("span", StringParam);
@@ -121,6 +129,15 @@ export default function CustomForm({
     "cmems",
     QueryCustomMembersArray
   );
+
+  const defaultMemberGroup: MemberGroup = { id: 0, name: "All Members" };
+  const [memberGroupNames = startingMemberGroups || [defaultMemberGroup.name], setMemberGroups] =
+    useQueryParam("grps", ArrayParam);
+
+  const memberGroups: MemberGroup[] = memberGroupNames?.map((name, id) => ({
+    id,
+    name: name ?? `Group ${id}`,
+  })) || [defaultMemberGroup];
 
   const [isStable, setIsStable] = useState<boolean>();
   const [customError, setCustomError] = useState<string>();
@@ -156,7 +173,8 @@ export default function CustomForm({
       .map((member, index) => ({
         start: member.start,
         end: member.end,
-        color:
+        groupId: member.groupId,
+        forceColor:
           memberForcesSummary &&
           dataToColorScale(
             customResults.memberResults[index].axial,
@@ -240,6 +258,39 @@ export default function CustomForm({
     setCustomNodes([]);
   };
 
+  const handleAddGroup = () => {
+    setMemberGroups((cur) => (!cur ? [defaultMemberGroup.name] : [...cur, `Group ${cur.length}`]));
+  };
+
+  const handleEditGroup = (group: MemberGroup) => {
+    setMemberGroups((cur) => {
+      const newGroups = [...(cur ?? [defaultMemberGroup.name])];
+      if (newGroups.length >= group.id + 1) {
+        newGroups[group.id] = group.name;
+      }
+      return newGroups;
+    });
+  };
+
+  const handleDeleteGroup = (i: number) => {
+    if (i < 0) return;
+
+    setMemberGroups((cur) => {
+      const newGroups = [...(cur ?? [defaultMemberGroup.name])];
+      if (newGroups.length > 0 && newGroups.length > i) {
+        newGroups.splice(i, 1);
+      }
+      return newGroups;
+    });
+
+    setCustomMembers((cur) =>
+      [...(cur || [])].map((mem) => ({
+        ...mem,
+        groupId: mem.groupId < i ? mem.groupId : Math.max(0, mem.groupId - 1),
+      }))
+    );
+  };
+
   const handleHideCalculations = () => {
     setHideCalculations(true);
     hideCalculationsDiv();
@@ -278,6 +329,7 @@ export default function CustomForm({
           setCustomError(undefined);
           setShowMemberForces(result.isStable);
           setCustomResults(result);
+          setShowMemberGroups(false);
         }
       })
       .catch((reason) => {
@@ -289,14 +341,22 @@ export default function CustomForm({
     handleHideAllResults();
   }, [customNodes, customMembers]);
 
+  // Populate passed-in query params when provided
   useEffect(() => {
     if (!customNodes?.length && !!startingNodes?.length) {
       setCustomNodes(startingNodes);
     }
+  }, [startingNodes]);
+  useEffect(() => {
     if (!customMembers?.length && !!startingMembers?.length) {
       setCustomMembers(startingMembers);
     }
-  }, [startingNodes, startingMembers]);
+  }, [startingMembers]);
+  useEffect(() => {
+    if (!!startingMemberGroups?.length) {
+      setMemberGroups(startingMemberGroups);
+    }
+  }, [startingMembers]);
 
   useEffect(() => {
     // clean up all unused query params
@@ -322,6 +382,7 @@ export default function CustomForm({
                   trussWidth={trussWidth}
                   nodes={nodesForGraph}
                   members={membersForGraph}
+                  memberColor={showMemberGroups ? "group" : "force"}
                   frameWidth={frameWidth}
                   frameHeight={frameHeight}
                   showNodeLabels={showNodeLabels}
@@ -392,6 +453,10 @@ export default function CustomForm({
                     handleEditMember={handleEditMember}
                     handleDeleteMember={handleDeleteMember}
                     nodeCount={customNodes.length}
+                    memberGroups={memberGroups}
+                    onAddGroup={handleAddGroup}
+                    onDeleteGroup={handleDeleteGroup}
+                    onEditGroup={handleEditGroup}
                   />
                 </CustomTabPanel>
               </Grid>
@@ -497,6 +562,7 @@ export default function CustomForm({
             useDefaultMemberProps={false}
             unitType={unitType}
             reactions={customResults.reactions}
+            memberGroups={memberGroups || []}
           />
         )}
       </div>

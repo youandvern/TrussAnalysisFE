@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { Arrow, Circle, Label, Layer, Line, Rect, Stage, Tag, Text } from "react-konva";
 import "./style.css";
 
+import React from "react";
 import { GLOBAL_THEME } from "../../App";
 import { MemberForcesSummary } from "../../Types/ApiForces";
 import { Members, Nodes } from "../../Types/ApiGeometry";
-import { dataToColorScale } from "../Utilities/DataToColorscale";
+import { dataToColorScale, getColorFromId } from "../Utilities/DataToColorscale";
 
 // force the truss to start at (0, 0)
 function getPositionCorrectedNodes(nodes: Nodes): Nodes {
@@ -34,6 +35,7 @@ export interface GeometryProps {
   trussWidth: number;
   nodes: Nodes;
   members: Members;
+  memberColor?: "group" | "force";
   frameHeight: number;
   frameWidth: number;
   showNodeLabels: boolean;
@@ -52,6 +54,7 @@ export default function TrussGraph({
   trussWidth,
   nodes,
   members,
+  memberColor,
   frameHeight,
   frameWidth,
   showNodeLabels,
@@ -80,7 +83,6 @@ export default function TrussGraph({
       <>
         {fx !== 0 && (
           <Arrow
-            key={`${keySeed}-fAx-${xp},${yp}`}
             points={[xp, yp, xp + xdir * aSize, yp]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -91,7 +93,6 @@ export default function TrussGraph({
         )}
         {fy !== 0 && (
           <Arrow
-            key={`${keySeed}-fAy-${xp},${yp}`}
             points={[xp, yp, xp, yp + ydir * aSize]}
             stroke="red"
             strokeWidth={aSize / 7}
@@ -182,14 +183,12 @@ export default function TrussGraph({
     return (
       <>
         <Line
-          key={`${keySeed}-pin1-${xp},${yp}`}
           points={[xp - 3 * pSize, -1 * yp + 3 * pSize, xp + 3 * pSize, -1 * yp + 3 * pSize]}
           stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={pSize}
           fillAfterStrokeEnabled
         />
         <Line
-          key={`${keySeed}-pin2-${xp},${yp}`}
           points={[
             xp - pLength * pSize,
             -1 * yp + pHeight * pLength * pSize,
@@ -210,14 +209,12 @@ export default function TrussGraph({
     return (
       <>
         <Line
-          key={`${keySeed}-roll1-${xp},${yp}`}
           points={[xp - 3 * rSize, -1 * yp + 3 * rSize, xp + 3 * rSize, -1 * yp + 3 * rSize]}
           stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={rSize}
           fillAfterStrokeEnabled
         />
         <Circle
-          key={`${keySeed}-roll2-${xp},${yp}`}
           x={xp}
           y={-1 * yp + rSize}
           radius={rSize * 1.25}
@@ -232,14 +229,12 @@ export default function TrussGraph({
     return (
       <>
         <Line
-          key={`${keySeed}-yroll1-${xp},${yp}`}
           points={[xp + 3 * rSize, -1 * yp - 3 * rSize, xp + 3 * rSize, -1 * yp + 3 * rSize]}
           stroke={GLOBAL_THEME.palette.secondary.main}
           strokeWidth={rSize}
           fillAfterStrokeEnabled
         />
         <Circle
-          key={`${keySeed}-yroll2-${xp},${yp}`}
           x={xp + rSize}
           y={-1 * yp}
           radius={rSize * 1.25}
@@ -258,7 +253,6 @@ export default function TrussGraph({
         y={y - yOffset}
         text={i}
         fontSize={offSet * 3}
-        key={`${keySeed}-nLabel-${x},${y}`}
       />
     );
   };
@@ -298,13 +292,14 @@ export default function TrussGraph({
             y2: correctedNodes[member.end].y * fscale,
           };
           return (
-            <>
+            <React.Fragment key={`${keySeed}-member-${iMember}`}>
               <Line
-                key={`${keySeed}-member-${iMember}`}
                 points={[points.x1, -1 * points.y1, points.x2, -1 * points.y2]}
                 stroke={
-                  member.color && memberForcesSummary
-                    ? member.color
+                  memberColor === "force" && member.forceColor
+                    ? member.forceColor
+                    : memberColor === "group" && member.groupId
+                    ? getColorFromId(member.groupId)
                     : GLOBAL_THEME.palette.primary.main
                 }
                 strokeWidth={nodeSizeScaled}
@@ -315,7 +310,7 @@ export default function TrussGraph({
               />
               {showMemberLabels &&
                 memberLabel(points.x1, -points.y1, points.x2, -points.y2, iMember, nodeSizeScaled)}
-            </>
+            </React.Fragment>
           );
         })}
 
@@ -324,7 +319,7 @@ export default function TrussGraph({
           const nodeX = node.x * fscale;
           const nodeY = node.y * fscale;
           return (
-            <>
+            <React.Fragment key={`${keySeed}-node-${iNode}`}>
               {node.fixity === "pin" &&
                 pinMarker(nodeX, nodeY - nodeSizeScaled / 2, nodeSizeScaled)}
               {node.fixity === "roller" &&
@@ -333,19 +328,14 @@ export default function TrussGraph({
                 yRollerMarker(nodeX + nodeSizeScaled, nodeY, nodeSizeScaled)}
               {thisNodeForce &&
                 forceArrows(nodeX, -nodeY, thisNodeForce[1], thisNodeForce[2], 4 * nodeSizeScaled)}
-              <Circle
-                x={nodeX}
-                y={-nodeY}
-                fill="black"
-                radius={nodeSizeScaled}
-                key={`${keySeed}-node-${iNode}`}
-              />
+              <Circle x={nodeX} y={-nodeY} fill="black" radius={nodeSizeScaled} />
               {showNodeLabels && nodeLabel(nodeX, -1 * nodeY, iNode, nodeSizeScaled)}
-            </>
+            </React.Fragment>
           );
         })}
 
         {memberForcesSummary &&
+          memberColor === "force" &&
           forceScale(
             trussWidth * fscale + 1 * nodeSizeScaled,
             -(0.8 * frameHeight),

@@ -12,13 +12,14 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { ComponentProps, useState } from "react";
 import { CustomMember } from "../../../Types/ApiAnalysisResults";
 import DataTableSimple from "../../DataTableSimple";
 import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import AddMultipleMembers from "./AddMultipleMembers";
 import AddOneMember from "./AddOneMember";
 import EditMemberForm from "./EditMemberForm";
+import MemberGroups from "./MemberGroups";
 
 const MemberActions = (
   memberIndex: number,
@@ -61,7 +62,12 @@ export default function CustomMembers({
   handleEditMember,
   handleDeleteMember,
   nodeCount,
-}: Props) {
+  // MemberGroupsProps
+  memberGroups,
+  onAddGroup,
+  onDeleteGroup,
+  onEditGroup,
+}: Props & ComponentProps<typeof MemberGroups>) {
   const [currentMemberIndex, setCurrentMemberIndex] = useState<number>();
 
   const areaUnit = unitToInputArea(unitType);
@@ -95,6 +101,7 @@ export default function CustomMembers({
               `End Node`,
               `Section Area (${areaUnit})`,
               `Elastic Modulus (${stressUnit})`,
+              "Group ID",
               "Edit/Delete",
             ]}
             dataList={customMembers.map((member, index) => [
@@ -103,6 +110,7 @@ export default function CustomMembers({
               member.end,
               member.A,
               member.E,
+              member.groupId,
               MemberActions(index, onClickEdit, handleDeleteMember),
             ])}
           />
@@ -114,7 +122,12 @@ export default function CustomMembers({
           <Typography fontWeight="bold">Add one Member</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <AddOneMember unitType={unitType} onCreate={handleAddMembers} nodeCount={nodeCount} />
+          <AddOneMember
+            unitType={unitType}
+            onCreate={handleAddMembers}
+            nodeCount={nodeCount}
+            memberGroups={memberGroups}
+          />
         </AccordionDetails>
       </Accordion>
 
@@ -127,6 +140,26 @@ export default function CustomMembers({
             unitType={unitType}
             onCreate={handleAddMembers}
             nodeCount={nodeCount}
+            memberGroups={memberGroups}
+          />
+        </AccordionDetails>
+      </Accordion>
+
+      <Accordion sx={{ marginTop: "1em" }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography fontWeight="bold">Member Groups</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography>
+            Members will be designed based on their grouping. An appropriate section size which
+            passes the design checks for every member of a given group will be selected and assigned
+            to each member in that group.
+          </Typography>
+          <MemberGroups
+            memberGroups={memberGroups}
+            onAddGroup={onAddGroup}
+            onDeleteGroup={onDeleteGroup}
+            onEditGroup={onEditGroup}
           />
         </AccordionDetails>
       </Accordion>
@@ -140,6 +173,8 @@ export default function CustomMembers({
               currentEnd={customMembers[currentMemberIndex].end}
               currentA={customMembers[currentMemberIndex].A}
               currentE={customMembers[currentMemberIndex].E}
+              currentGroupId={customMembers[currentMemberIndex].groupId}
+              memberGroups={memberGroups}
               nodeCount={nodeCount}
               unitType={unitType}
               onSubmit={onSubmitEdit}

@@ -6,11 +6,11 @@ import { CustomNode, SupportType, supportTypes } from "../../../Types/ApiAnalysi
 import { csvToArray } from "../utils";
 
 const EXAMPLE_CSV = (
-  <Typography>
+  <span>
     0, 0, pin, 0, 0<br />
     10, 0, roller, 0, 0<br />
     5, 5, free, -1, 4
-  </Typography>
+  </span>
 );
 
 const stringToSupportType = (typeish: string): SupportType => {

@@ -1,15 +1,14 @@
-import React from "react";
-import "./style.css";
 import {
-  TableContainer,
-  Typography,
+  Paper,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  Paper,
-  TableBody,
+  Typography,
 } from "@mui/material/";
+import "./style.css";
 
 // expected properties given to DataTable
 interface TableProps {
@@ -17,10 +16,17 @@ interface TableProps {
   dataList: any[][];
   condensed?: boolean;
   centered?: boolean;
+  useGenericCells?: boolean;
 }
 
 // Data table to display 2d data for concrete beam design results
-export default function DataTableSimple({ headerList, dataList, condensed, centered }: TableProps) {
+export default function DataTableSimple({
+  headerList,
+  dataList,
+  condensed,
+  centered,
+  useGenericCells,
+}: TableProps) {
   return (
     <TableContainer
       component={Paper}
@@ -50,7 +56,13 @@ export default function DataTableSimple({ headerList, dataList, condensed, cente
               {row.map((cell, cindex) => {
                 return (
                   <TableCell key={"data" + rindex + "-" + cindex}>
-                    <Typography sx={{ paddingLeft: "1em", fontSize: "0.95em" }}>{cell}</Typography>
+                    {useGenericCells ? (
+                      cell
+                    ) : (
+                      <Typography sx={{ paddingLeft: "1em", fontSize: "0.95em" }}>
+                        {cell}
+                      </Typography>
+                    )}
                   </TableCell>
                 );
               })}

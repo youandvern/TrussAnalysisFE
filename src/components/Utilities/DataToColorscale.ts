@@ -8,4 +8,21 @@ export const dataToColorScale = (value: number, max: number, min: number) => {
   })`;
 };
 
+export const getColorFromId = (id: number): string => {
+  const colors = [
+    "#004AAD",
+    "#AD00A1",
+    "#00AD0D",
+    "#AD6300",
+    "#5A00FF",
+    "#FF0026",
+    "#A5FF00",
+    "#00FFD9",
+  ];
+  // Round and wrap the id to ensure it's within valid bounds
+  const i = Math.round(Math.abs(id)) % colors.length;
+
+  return colors[i];
+};
+
 // rgb(92, 119, 124)

@@ -1,23 +1,26 @@
-import { Theme, Typography, useMediaQuery, styled } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { Box, styled, Theme, Typography, useMediaQuery } from "@mui/material";
+import { useMemo } from "react";
+import { MemberGroup, SupportReaction } from "../../Types/ApiAnalysisResults";
+import { Members } from "../../Types/ApiGeometry";
 import DataTableSimple from "../DataTableSimple";
 import TrussGraph, { GeometryProps } from "../TrussGraph";
-import "./style.css";
-import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
-import EndNodeSymbol from "./images/EndNodeSymbol.png";
-import MemberDirectionSymbol from "./images/MemberDirectionSymbol.png";
-import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
-import StartNodeSymbol from "./images/StartNodeSymbol.png";
 import {
-  unitToLength,
-  unitToInputLength,
-  unitToForce,
-  unitToInputStress,
-  unitToInputArea,
   unitToAreaFactorInputToCalc,
+  unitToForce,
+  unitToInputArea,
+  unitToInputLength,
+  unitToInputStress,
+  unitToLength,
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
-import { SupportReaction } from "../../Types/ApiAnalysisResults";
+import { getColorFromId } from "../Utilities/DataToColorscale";
+import EndNodeSymbol from "./images/EndNodeSymbol.png";
+import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
+import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
+import MemberDirectionSymbol from "./images/MemberDirectionSymbol.png";
+import StartNodeSymbol from "./images/StartNodeSymbol.png";
+import "./style.css";
 
 const matrixNumTruncatorRelative0 = (val: number, absMax: number, precision?: number) => {
   const relativeFactor = Math.abs(val) / absMax;
@@ -56,9 +59,9 @@ const matrix = (data: any[][], scrollable = false) => (
     <table className="matrix-div">
       <tbody>
         {data.map((val, indexI) => (
-          <tr>
-            {val.map((cell) => (
-              <td>{cell}</td>
+          <tr key={`row-${indexI}`}>
+            {val.map((cell, indexJ) => (
+              <td key={`cell-${indexJ}`}>{cell}</td>
             ))}
           </tr>
         ))}
@@ -92,6 +95,15 @@ const trigMatrixArray = [
   [exponent("-cs", ""), exponent("-s", "2"), exponent("cs", ""), exponent("s", "2")],
 ];
 
+const getMemberGroupToMemberMap = (members: Members) => {
+  return Object.entries(members).reduce<Record<number, string[]>>((acc, [id, member]) => {
+    const groupId = member.groupId ?? 0;
+    acc[groupId] = acc[groupId] || []; // Initialize the group if it doesn't exist
+    acc[groupId].push(id); // Add the member to the group
+    return acc;
+  }, {});
+};
+
 export type MemberProperty = { id: number; A: number; E: number };
 
 // expected properties given to Labeled Switch
@@ -107,7 +119,8 @@ interface CalcReportProps {
   reducedForceMatrix: number[];
   useDefaultMemberProps: boolean;
   unitType?: string;
-  reactions?: SupportReaction[];
+  reactions: SupportReaction[];
+  memberGroups: MemberGroup[];
 }
 
 // Div holding calculation report
@@ -124,6 +137,7 @@ export default function CalculationReport({
   useDefaultMemberProps,
   unitType,
   reactions,
+  memberGroups,
 }: CalcReportProps) {
   const lengthUnit = unitToLength(unitType);
   const inputLengthUnit = unitToInputLength(unitType);
@@ -170,6 +184,11 @@ export default function CalculationReport({
     })) || [];
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+
+  const groupIdToMembers = useMemo(
+    () => getMemberGroupToMemberMap(geometryProps.members),
+    [geometryProps]
+  );
 
   return (
     <div className="calc-report-container" id="calc-report-container">
@@ -473,6 +492,7 @@ export default function CalculationReport({
         showMemberLabels: true,
         showForceArrows: false,
         keySeed: "3",
+        memberColor: "force",
       })}
       {caption(`Figure 4: Structure member loading (${forceUnit})`)}
       <DataTableSimple
@@ -485,29 +505,62 @@ export default function CalculationReport({
       />
       {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}
 
-      {reactions && (
-        <>
-          <h4>3.7 Calculate support reactions</h4>
-          <p>
-            First, the unknown values in the global force matrix, Q, is assembled by multiplying the
-            global stiffness matrix by the global displacement matrix: Q = K &#183; D{" "}
-          </p>
-          <p>
-            The total force at the truss supports are then found by removing all of the free degrees
-            of freedom (reduced structural load matrix, Q<sub>R</sub>) from the force matrix so that
-            only the supported degrees of freedom remain.
-          </p>
-          <p>
-            Finally, to calculate the supports, any loads applied to the supports are subtracted out
-            of this reduced force matrix yielding the following support reactions:
-          </p>
-          <DataTableSimple
-            headerList={["Node ID", `Rx (${forceUnit})`, `Ry (${forceUnit})`]}
-            dataList={roundedReactions.map((r) => [r.index, r.x, r.y])}
-          />
-          {caption("Table 6: Structure support reaction summary")}
-        </>
-      )}
+      <h4>3.7 Calculate support reactions</h4>
+      <p>
+        First, the unknown values in the global force matrix, Q, is assembled by multiplying the
+        global stiffness matrix by the global displacement matrix: Q = K &#183; D{" "}
+      </p>
+      <p>
+        The total force at the truss supports are then found by removing all of the free degrees of
+        freedom (reduced structural load matrix, Q<sub>R</sub>) from the force matrix so that only
+        the supported degrees of freedom remain.
+      </p>
+      <p>
+        Finally, to calculate the supports, any loads applied to the supports are subtracted out of
+        this reduced force matrix yielding the following support reactions:
+      </p>
+      <DataTableSimple
+        headerList={["Node ID", `Rx (${forceUnit})`, `Ry (${forceUnit})`]}
+        dataList={roundedReactions.map((r) => [r.index, r.x, r.y])}
+      />
+      {caption("Table 6: Structure support reaction summary")}
+
+      <h3>4. Member Design Groups</h3>
+      <p>
+        Members will be designed based on their grouping. An appropriate section size which passes
+        the design checks for every member of a given group will be selected and assigned to each
+        member in that group.
+      </p>
+      <h4>4.1 Member Design Groups</h4>
+
+      {TrussGraph({
+        ...geometryProps,
+        frameHeight: trussOnlyFrameHeight,
+        showAxes: false,
+        showNodeLabels: false,
+        showMemberLabels: true,
+        showForceArrows: false,
+        memberForcesSummary: undefined,
+        keySeed: "4",
+        memberColor: "group",
+      })}
+      {caption("Figure 5: Truss with member ids and colored members based on member design group")}
+
+      <DataTableSimple
+        headerList={["Group ID", "Group Name", "Color (above)", "Members in group"]}
+        dataList={memberGroups.map((group) => [
+          group.id,
+          group.name,
+          <Box
+            key={`gcolor-${group.id}`}
+            width={"3em"}
+            height={"1em"}
+            bgcolor={getColorFromId(group.id)}
+          ></Box>,
+          (groupIdToMembers[group.id] || []).join(", "),
+        ])}
+      />
+      {caption("Table 7: Member group definitions")}
 
       <Typography marginTop="3rem" textAlign="right">
         Powered by{" "}

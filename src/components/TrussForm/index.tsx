@@ -1,20 +1,19 @@
-import React, { useEffect, useRef } from "react";
-import { useState } from "react";
-import { useQueryParam, StringParam } from "use-query-params";
-import "./style.css";
-import { Grid, useMediaQuery, Theme } from "@mui/material";
+import { Grid, Theme, useMediaQuery } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { StringParam, useQueryParam } from "use-query-params";
+import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
 import LabeledSwitch from "../LabeledSwitch";
+import { TrussCategory } from "../TrussCategorySelector";
 import TrussStyleSelector, {
   BRIDGE_TRUSS_TYPES,
   ROOF_TRUSS_TYPES,
   TRUSS_TYPES,
 } from "../TrussStyleSelector";
 import UnitSelector, { US_UNIT } from "../UnitSelector";
-import { TrussCategory } from "../TrussCategorySelector";
-import StandardForm from "./StandardForm";
 import CustomForm from "./CustomForm";
+import StandardForm from "./StandardForm";
 import { CategoryParam } from "./StringQueries";
-import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
+import "./style.css";
 
 const DEFAULT_TRUSS_CATEGORY: TrussCategory = "bridge";
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
@@ -45,13 +44,20 @@ export default function TrussForm() {
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showMemberLabels, setShowMemberLabels] = useState(false);
   const [showForceArrows, setShowForceArrows] = useState(true);
+  const [showMemberGroups, setShowMemberGroups] = useState(true);
+
+  const canShowMemberGroups = trussCategory === "custom" ? true : false;
 
   const [startingCustomGeometry, setStartingCustomGeometry] = useState<
-    [CustomNode[], CustomMember[]]
-  >([[], []]);
+    [CustomNode[], CustomMember[], string[]]
+  >([[], [], []]);
 
-  const handleSetStartingCustomNodes = (nodes: CustomNode[], members: CustomMember[]) => {
-    setStartingCustomGeometry([nodes, members]);
+  const handleSetStartingCustomNodes = (
+    nodes: CustomNode[],
+    members: CustomMember[],
+    groups: string[]
+  ) => {
+    setStartingCustomGeometry([nodes, members, groups]);
   };
 
   const handleChangeTrussType = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +88,10 @@ export default function TrussForm() {
 
   const handleShowMemberLabels = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShowMemberLabels(event?.target?.checked);
+  };
+
+  const handleShowMemberGroups = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setShowMemberGroups(event?.target?.checked);
   };
 
   const handleShowForceArrows = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +155,24 @@ export default function TrussForm() {
               handleChange={handleShowForceArrows}
             />
           </Grid>
-          <Grid item xs={6} sm={12} md={3}>
+          {canShowMemberGroups && (
+            <Grid item xs={6} sm={6} md={3}>
+              <LabeledSwitch
+                label="Member Groups:"
+                checked={showMemberGroups}
+                handleChange={handleShowMemberGroups}
+              />
+            </Grid>
+          )}
+          <Grid
+            item
+            xs={canShowMemberGroups ? 12 : 6}
+            sm={canShowMemberGroups ? 6 : 12}
+            md={canShowMemberGroups ? 12 : 3}
+            display={"flex"}
+            justifyContent={"end"}
+            paddingRight={2}
+          >
             <UnitSelector unitType={unitType} handleChange={handleChangeUnitType} />
           </Grid>
         </Grid>
@@ -155,6 +182,8 @@ export default function TrussForm() {
           showNodeLabels={showNodeLabels}
           showMemberLabels={showMemberLabels}
           showForceArrows={showForceArrows}
+          showMemberGroups={showMemberGroups}
+          setShowMemberGroups={setShowMemberGroups}
           unitType={unitType}
           frameWidth={frameWidth}
           frameHeight={frameHeight}
@@ -162,6 +191,7 @@ export default function TrussForm() {
           onRenderGraph={onRenderGraph}
           startingNodes={startingCustomGeometry[0]}
           startingMembers={startingCustomGeometry[1]}
+          startingMemberGroups={startingCustomGeometry[2]}
         />
       ) : (
         <StandardForm

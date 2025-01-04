@@ -2,29 +2,30 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
-import { CustomMember } from "../../../Types/ApiAnalysisResults";
+import { CustomMember, MemberGroup } from "../../../Types/ApiAnalysisResults";
 import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import { csvToArray } from "../utils";
 import { validateMember } from "./member-validator";
 
 const EXAMPLE_CSV = (
-  <Typography>
-    0, 1, 4.2, 29000
+  <span>
+    0, 1, 4.2, 29000, 0
     <br />
-    0, 2, 3.1, 29000
+    0, 2, 3.1, 29000, 0
     <br />
-    1, 2, 3.1, 29000
+    1, 2, 3.1, 29000, 0
     <br />
-  </Typography>
+  </span>
 );
 
 type Props = {
   unitType: string;
   onCreate: (members: CustomMember[]) => void;
   nodeCount: number;
+  memberGroups: MemberGroup[];
 };
 
-export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Props) {
+export default function AddMultipleMembers({ onCreate, unitType, nodeCount, memberGroups }: Props) {
   const [input, setInput] = useState<string>();
   const [errorMessage, setErrorMesage] = useState<string>();
   const [success, setSuccess] = useState<boolean>();
@@ -32,17 +33,25 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
   const areaUnit = unitToInputArea(unitType);
   const stressUnit = unitToInputStress(unitType);
 
-  const headers = `start node, end node, section area (${areaUnit}), elastic modulus (${stressUnit})`;
+  const headers = `start node, end node, section area (${areaUnit}), elastic modulus (${stressUnit}), group number`;
 
   const isInputRowInvalid = (row: string[], rowIndex: number, rowCount: number) => {
-    if (row.length !== 4) {
+    if (row.length !== 5) {
       setErrorMesage(
-        `Member ${rowIndex + 1} out of ${rowCount}: All rows must have 4 comma-separated values`
+        `Member ${rowIndex + 1} out of ${rowCount}: All rows must have 5 comma-separated values`
       );
       return true;
     }
 
-    const validatedMember = validateMember(nodeCount, row[0], row[1], row[2], row[3]);
+    const validatedMember = validateMember(
+      nodeCount,
+      row[0],
+      row[1],
+      row[2],
+      row[3],
+      row[4],
+      memberGroups.length
+    );
     if (!validatedMember.valid) {
       setErrorMesage(`Member ${rowIndex + 1} out of ${rowCount}: ${validatedMember.error}`);
       return true;
@@ -77,6 +86,7 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
         end: +row[1],
         A: +row[2],
         E: +row[3],
+        groupId: +row[4],
       }));
       onCreate(newMembers);
       setErrorMesage(undefined);
@@ -90,7 +100,7 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
         <Typography>
           Insert members by pasting or typing comma separated data. Each row will be interpreted as
           a unique member that will be added to the existing geometry. Each row should have exactly
-          4 comma separated values to match the following headers:
+          5 comma separated values to match the following headers:
         </Typography>
         <Typography fontWeight="bold">{headers}</Typography>
         <Typography>For example:</Typography>
@@ -104,7 +114,7 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount }: Pr
           label={headers}
           multiline
           minRows={3}
-          placeholder="e.g. 4, 12, 0.25, 7400"
+          placeholder="e.g. 4, 12, 0.25, 7400, 0"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />

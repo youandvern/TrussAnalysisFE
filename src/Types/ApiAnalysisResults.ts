@@ -14,6 +14,12 @@ export type CustomMember = {
   end: number;
   A?: number;
   E?: number;
+  groupId: number;
+};
+
+export type MemberGroup = {
+  id: number;
+  name: string;
 };
 
 export type CustomAnalysisRequest = {

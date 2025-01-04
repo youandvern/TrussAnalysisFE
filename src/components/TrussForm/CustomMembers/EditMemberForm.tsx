@@ -1,6 +1,6 @@
-import { Alert, Button, Grid } from "@mui/material";
+import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
 import { FormEvent, useState } from "react";
-import { CustomMember } from "../../../Types/ApiAnalysisResults";
+import { CustomMember, MemberGroup } from "../../../Types/ApiAnalysisResults";
 import NumInput from "../../NumInput";
 import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import { validateMember } from "./member-validator";
@@ -10,7 +10,9 @@ type Props = {
   currentEnd: number;
   currentA?: number;
   currentE?: number;
+  currentGroupId: number;
   nodeCount: number;
+  memberGroups: MemberGroup[];
   unitType: string;
   onSubmit: (member: CustomMember) => void;
   onClose: () => void;
@@ -21,7 +23,9 @@ export default function EditMemberForm({
   currentEnd,
   currentA,
   currentE,
+  currentGroupId,
   nodeCount,
+  memberGroups,
   unitType,
   onSubmit,
   onClose,
@@ -30,12 +34,21 @@ export default function EditMemberForm({
   const [end, setEnd] = useState(`${currentEnd}`);
   const [area, setArea] = useState(`${currentA}`);
   const [eMod, setEmod] = useState(`${currentE}`);
+  const [memberGroup, setMemberGroup] = useState(currentGroupId);
   const [validationError, setValidationError] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    const validMember = validateMember(nodeCount, start, end, area, eMod);
+    const validMember = validateMember(
+      nodeCount,
+      start,
+      end,
+      area,
+      eMod,
+      memberGroup,
+      memberGroups.length
+    );
 
     if (!validMember.valid) {
       setValidationError(validMember.error);
@@ -46,6 +59,7 @@ export default function EditMemberForm({
         end: validMember.end,
         A: validMember.area,
         E: validMember.eMod,
+        groupId: validMember.groupId,
       });
     }
   };
@@ -99,6 +113,24 @@ export default function EditMemberForm({
             max={999999}
             step="any"
           />
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl fullWidth>
+            <InputLabel id="member-group-select-label">member group</InputLabel>
+            <Select
+              labelId="member-group-select-label"
+              id="member-group-select"
+              value={memberGroup}
+              label="member group"
+              onChange={(e) => setMemberGroup(+e.target.value)}
+            >
+              {memberGroups.map((group) => (
+                <MenuItem key={`item-${group.id}-${group.name}`} value={group.id}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={6}>
           <Button variant="outlined" fullWidth color="primary" onClick={onClose}>

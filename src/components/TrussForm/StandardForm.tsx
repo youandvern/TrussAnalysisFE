@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrayParam,
   BooleanParam,
   NumberParam,
   ObjectParam,
@@ -23,7 +24,7 @@ import {
 
 import { CustomMember, CustomNode, SupportType } from "../../Types/ApiAnalysisResults";
 import { emptyApiForcesParsed, MemberForcesSummary } from "../../Types/ApiForces";
-import ApiGeometry, { Nodes } from "../../Types/ApiGeometry";
+import ApiGeometry, { Members, Nodes } from "../../Types/ApiGeometry";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
 import CalculationReport from "../CalculationReport";
 import DataTable from "../DataTableControlled";
@@ -62,6 +63,8 @@ import {
 
 const debounce = require("lodash.debounce");
 
+type MemberType = "top" | "bot" | "web";
+
 const DEFAULT_SPAN = 16;
 const DEFAULT_HEIGHT = 4;
 const DEFAULT_DEPTH = 1.5;
@@ -81,10 +84,42 @@ const generateForces = (nForces: number) => {
   return zeros.map((_zero, index) => [`${index}`, "0", "0"]);
 };
 
-const getFromMemberPropsType = (props: MemberPropsType, type?: string) => {
+const parseMemberType = (type: string): MemberType => {
   if (type === "top" || type === "topChord") {
-    return props.top;
+    return "top";
   } else if (type === "bot" || type === "botChord") {
+    return "bot";
+  } else {
+    return "web";
+  }
+};
+
+const customGroups: string[] = ["Top Chord", "Bottom Chord", "Web Members"];
+
+const getGroupIdFromType = (maybeType?: string): number => {
+  if (!maybeType) return 0;
+  const type = parseMemberType(maybeType);
+  return type === "top" ? 0 : type === "bot" ? 1 : 2;
+};
+
+export function updateGroupId(members: Members): Members {
+  const updatedMembers: Members = {};
+
+  for (const key in members) {
+    updatedMembers[key] = {
+      ...members[key],
+      groupId: getGroupIdFromType(members[key].type),
+    };
+  }
+
+  return updatedMembers;
+}
+
+const getFromMemberPropsType = (props: MemberPropsType, type?: string) => {
+  const memberType: MemberType = type ? parseMemberType(type) : "web";
+  if (memberType === "top") {
+    return props.top;
+  } else if (memberType === "bot") {
     return props.bot;
   } else {
     return props.web;
@@ -143,7 +178,7 @@ type Props = {
     newValue: TrussCategory | null | undefined,
     updateType?: any | undefined
   ) => void;
-  onUnmount: (nodes: CustomNode[], members: CustomMember[]) => void;
+  onUnmount: (nodes: CustomNode[], members: CustomMember[], groups: string[]) => void;
 };
 
 // clean up standard query params when unmounting
@@ -164,6 +199,7 @@ export default function StandardForm({
   // Custom form query params to clean up
   const [_cnode, setCustomNodes] = useQueryParam("cnodes", QueryCustomNodesArray);
   const [_cmem, setCustomMembers] = useQueryParam("cmems", QueryCustomMembersArray);
+  const [_cgroup, setCustomMemberGroups] = useQueryParam("grps", ArrayParam);
 
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", StringParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", StringParam);
@@ -317,7 +353,7 @@ export default function StandardForm({
       result.data.memberForces.forEach((force) => {
         const member = geometry?.members[force[0].toString()];
         if (member) {
-          member.color = dataToColorScale(+force[3], max, min);
+          member.forceColor = dataToColorScale(+force[3], max, min);
         }
       });
 
@@ -575,12 +611,13 @@ export default function StandardForm({
         (mem) => ({
           start: mem.start,
           end: mem.end,
+          groupId: getGroupIdFromType(mem.type),
           A: getFromMemberPropsType(areaPropsParsed.current, mem.type),
           E: getFromMemberPropsType(elasticModulusPropsParsed.current, mem.type),
         })
       );
 
-      onUnmount(customNodes, customMembers);
+      onUnmount(customNodes, customMembers, customGroups);
     }
   };
 
@@ -588,6 +625,7 @@ export default function StandardForm({
     // clean up unused query params on mounting
     setCustomNodes(undefined);
     setCustomMembers(undefined);
+    setCustomMemberGroups(undefined);
     return () => {
       unmountWithGeometry();
     };
@@ -613,6 +651,7 @@ export default function StandardForm({
                   memberForcesSummary={memberForcesSummary}
                   nodeForces={(forces ?? DEFAULT_FORCES).map((row) => row.map((f) => +f))}
                   onRender={onRenderGraph}
+                  memberColor={"force"}
                 />
               </Box>
             )}
@@ -781,7 +820,7 @@ export default function StandardForm({
               trussHeight: trussHeight,
               trussWidth: trussWidth,
               nodes: geometry.nodes,
-              members: geometry.members,
+              members: updateGroupId(geometry.members),
               frameWidth: frameWidth,
               frameHeight: frameHeight,
               showNodeLabels: showNodeLabels,
@@ -809,7 +848,8 @@ export default function StandardForm({
             reducedForceMatrix={standardizedForceResults.reducedForceMatrix}
             useDefaultMemberProps={useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : false}
             unitType={unitType}
-            reactions={standardizedForceResults.reactions}
+            reactions={standardizedForceResults.reactions || []}
+            memberGroups={customGroups.map((name, id) => ({ id, name }))}
           />
         )}
       </div>
