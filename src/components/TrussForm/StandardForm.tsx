@@ -28,7 +28,7 @@ import ApiGeometry, { Members, Nodes } from "../../Types/ApiGeometry";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
 import CalculationReport from "../CalculationReport";
 import DataTable from "../DataTableControlled";
-import { FetchForces } from "../FetchForces";
+import { fetchAnalysis } from "../FetchCustomAnalysis";
 import { FetchGeometry } from "../FetchGeometry";
 import MemberForceResults from "../MemberForceResults";
 import MemberPropertiesForm, {
@@ -40,13 +40,9 @@ import NumSlider from "../NumSlider";
 import { TrussCategory } from "../TrussCategorySelector";
 import TrussGraph from "../TrussGraph";
 import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
-import {
-  unitToAreaFactorInputToCalc,
-  unitToForce,
-  unitToLength,
-  unitToStressFactorInputToCalc,
-} from "../UnitSelector";
+import { unitToForce, unitToLength } from "../UnitSelector";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
+import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
 import LinearLoadForm, { LoadApplication, NodeGroup, OptionalForces } from "./LinearLoadForm";
 import { Query2dNumberArray } from "./Query2dNumberArray";
 import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
@@ -68,6 +64,7 @@ type MemberType = "top" | "bot" | "web";
 const DEFAULT_SPAN = 16;
 const DEFAULT_HEIGHT = 4;
 const DEFAULT_DEPTH = 1.5;
+const DEFAULT_DEPTH_END = 1;
 const DEFAULT_NWEB = 1;
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
 const DEFAULT_A = "5";
@@ -77,7 +74,9 @@ const EMPTY_NODES: Nodes = { "0": { x: 0, y: 0, fixity: "free" } };
 const VALIDATION_ERROR = "All input values must be a valid number";
 
 const isDepthRelevant = (trussType: string) =>
-  trussType === "ParallelChordRoofTruss" || trussType === "ScissorTruss";
+  ["ParallelChordRoofTruss", "ScissorTruss", "SemiParallelChordRoofTruss"].includes(trussType);
+
+const isEndDepthRelevant = (trussType: string) => trussType === "SemiParallelChordRoofTruss";
 
 const generateForces = (nForces: number) => {
   let zeros = Array<number>(nForces).fill(0);
@@ -156,13 +155,6 @@ const queryToMemberInputProps = (
     web: objectVal?.web ?? defaultVal,
   } as MemberInputPropsType);
 
-const inputPropsToCalcProps = (conversionFactor: number, props: MemberPropsType) =>
-  ({
-    top: conversionFactor * props.top,
-    bot: conversionFactor * props.bot,
-    web: conversionFactor * props.web,
-  } as MemberPropsType);
-
 type Props = {
   trussCategory: TrussCategory;
   trussType: string | null;
@@ -204,6 +196,7 @@ export default function StandardForm({
   const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", StringParam);
   const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", StringParam);
   const [depth = DEFAULT_DEPTH, setDepth] = useQueryParam("depth", StringParam);
+  const [depthEnd = DEFAULT_DEPTH_END, setDepthEnd] = useQueryParam("depthEnd", StringParam);
   const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
   const [elasticModulusProps, setElasticModulusProps] = useQueryParam("eMod", ObjectParam);
   const [areaProps, setAreaProps] = useQueryParam("area", ObjectParam);
@@ -213,6 +206,7 @@ export default function StandardForm({
   const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
 
   const includeDepth = isDepthRelevant(trussType || "");
+  const includeDepthEnd = isEndDepthRelevant(trussType || "");
 
   const [geometry, setGeometry] = useState<ApiGeometry>();
   const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
@@ -287,95 +281,86 @@ export default function StandardForm({
   }, [nNodes, setForces]);
 
   const updateMemberForcesStandard = useCallback(() => {
-    const spanWithDefault = numberValOrDefault(span, DEFAULT_SPAN);
-    const heightWithDefault = numberValOrDefault(height, DEFAULT_HEIGHT);
-    const depthWithDefault = numberValOrDefault(depth, DEFAULT_DEPTH);
-    const elasticMemberProps = queryToMemberProps(DEFAULT_E, elasticModulusProps);
-    const areaMemberProps = queryToMemberProps(DEFAULT_A, areaProps);
+    // Flip y-axis direction
+    const forcesCorrected = (
+      forces ?? generateForces(Object.keys(geometry?.nodes ?? {}).length ?? 0)
+    ).map((force) => [+force[0], +force[1], -1 * +force[2]]);
 
-    const allMemberProps = [
-      elasticMemberProps.top,
-      elasticMemberProps.bot,
-      elasticMemberProps.web,
-      areaMemberProps.top,
-      areaMemberProps.bot,
-      areaMemberProps.web,
-    ];
+    const customNodes: CustomNode[] = Object.entries(geometry?.nodes ?? {}).map(
+      ([k, node], idx) => ({
+        x: node.x,
+        y: node.y,
+        support: node.fixity as SupportType,
+        Fx: forcesCorrected[idx][1],
+        Fy: forcesCorrected[idx][2],
+      })
+    );
 
-    const forcesWithDefault = forces ?? DEFAULT_FORCES;
-    const allForceVals = forcesWithDefault.flatMap((f) => f);
-    if (
-      allNumbers([
-        spanWithDefault,
-        heightWithDefault,
-        depthWithDefault,
-        ...allForceVals,
-        ...allMemberProps,
-      ])
-    ) {
-      if (allMemberProps.some((p) => p <= 0)) {
-        setValidationError("Area and Elastic Modulus input values must be greater than 0");
+    const customMembers: CustomMember[] = Object.entries(geometry?.members ?? {}).map(
+      ([k, mem], idx) => ({
+        start: mem.start,
+        end: mem.end,
+        A: 1,
+        E: 29000,
+        groupId: mem.type === "topChord" ? 0 : mem.type === "botChord" ? 1 : 2,
+      })
+    );
+
+    fetchAnalysis({ nodes: customNodes, members: customMembers }).then((result) => {
+      if (!result.isStable || !result.success) {
+        setValidationError("Analysis failed. Please refresh the page and try again.");
         return;
       }
-      clearValidationError();
-    } else {
-      setValidationError(VALIDATION_ERROR);
-      return;
-    }
-
-    // Flip y-axis direction
-    const forcesCorrected = forcesWithDefault.map((force) => [
-      +force[0],
-      +force[1],
-      -1 * +force[2],
-    ]);
-
-    FetchForces(
-      spanWithDefault,
-      heightWithDefault,
-      nWeb ?? DEFAULT_NWEB,
-      forcesCorrected,
-      depthWithDefault,
-      trussType || DEFAULT_TRUSS_TYPE,
-      unitType,
-      inputPropsToCalcProps(unitToStressFactorInputToCalc(unitType), elasticMemberProps),
-      inputPropsToCalcProps(unitToAreaFactorInputToCalc(unitType), areaMemberProps)
-    ).then((result) => {
       // Get spread of forces for color calculations
-      let max = +result.data.memberForces[0][3];
-      let min = +result.data.memberForces[0][3];
-      result.data.memberForces.forEach((force) => {
-        max = Math.max(max, +force[3]);
-        min = Math.min(min, +force[3]);
+      let max = result.memberResults[0].axial;
+      let min = result.memberResults[0].axial;
+      result.memberResults.forEach((mr) => {
+        max = Math.max(max, mr.axial);
+        min = Math.min(min, mr.axial);
       });
 
       // Set colors based on forces
-      result.data.memberForces.forEach((force) => {
-        const member = geometry?.members[force[0].toString()];
+      result.memberResults.forEach((mr) => {
+        const member = geometry?.members[mr.index.toString()];
         if (member) {
-          member.forceColor = dataToColorScale(+force[3], max, min);
+          member.forceColor = dataToColorScale(mr.axial, max, min);
         }
       });
 
-      setMemberForcesSummary({ max: max, min: min });
-      setExpandTrussLoads(!result.show);
+      setMemberForcesSummary({ max, min });
+      setExpandTrussLoads(false);
       setExpandSectionProperties(false);
-      setShowMemberForces(result.show);
-      setStandardizedForceResults(result.data);
+      setShowMemberForces(true);
+
+      const lengthUnit = unitToLength(unitType);
+      const forceUnit = unitToForce(unitType);
+
+      const memberForcesHeaders = [
+        "Member ID",
+        "Start -> End Node",
+        `Length (${lengthUnit})`,
+        `Axial Force (${forceUnit})`,
+      ];
+
+      const memberForces = result?.memberResults.map((member) => [
+        member.index,
+        memberNodesFormatter(member.start, member.end),
+        Math.abs(member.length) < 0.0001 ? 0 : +member.length.toPrecision(4),
+        Math.abs(member.axial) < 0.0001 ? 0 : +member.axial.toPrecision(4),
+      ]);
+
+      setStandardizedForceResults({
+        memberForcesHeaders,
+        memberForces,
+        displacements: result.displacements || [],
+        member0StiffnessMatrix: result.member0StiffnessMatrix,
+        structureStiffnessMatrix: result.structureStiffnessMatrix,
+        structureReducedStiffnessMatrix: result.structureReducedStiffnessMatrix,
+        reducedForceMatrix: result.reducedForceMatrix,
+        reactions: result.reactions,
+      });
     });
-  }, [
-    span,
-    height,
-    depth,
-    nWeb,
-    forces,
-    geometry?.members,
-    trussType,
-    unitType,
-    areaProps,
-    elasticModulusProps,
-    DEFAULT_FORCES,
-  ]);
+  }, [geometry?.nodes, geometry?.members, forces, unitType]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(event?.target?.value);
@@ -387,6 +372,10 @@ export default function StandardForm({
 
   const handleSetDepth = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setDepth(event?.target?.value);
+  };
+
+  const handleSetDepthEnd = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    setDepthEnd(event?.target?.value);
   };
 
   const handleSetArea = (
@@ -556,9 +545,16 @@ export default function StandardForm({
   const throttledFetchGeometry = useMemo(
     () =>
       debounce(
-        (span1: number, height1: number, nWeb1: number, depth1: number, trussType1: string) => {
-          if (allNumbers([span1, height1, nWeb1, depth1])) {
-            if (+span1 === 0 || height1 === 0 || depth1 === 0) {
+        (
+          span1: number,
+          height1: number,
+          nWeb1: number,
+          depth1: number,
+          depthEnd1: number,
+          trussType1: string
+        ) => {
+          if (allNumbers([span1, height1, nWeb1, depth1, depthEnd1])) {
+            if (+span1 === 0 || height1 === 0 || depth1 === 0 || depthEnd1 === 0) {
               setValidationError("Span, height, and depth must be non-zero");
               return;
             }
@@ -567,11 +563,13 @@ export default function StandardForm({
             setValidationError(VALIDATION_ERROR);
             return;
           }
-          return FetchGeometry(span1, height1, nWeb1, depth1, trussType1).then((result) => {
-            setGeometry(result.data);
-            geometryRef.current = result.data;
-            geometryFetchCount.current++;
-          });
+          return FetchGeometry(span1, height1, nWeb1, depth1, depthEnd1, trussType1).then(
+            (result) => {
+              setGeometry(result.data);
+              geometryRef.current = result.data;
+              geometryFetchCount.current++;
+            }
+          );
         },
         300
       ),
@@ -584,9 +582,10 @@ export default function StandardForm({
       numberValOrDefault(height, DEFAULT_HEIGHT),
       nWeb || DEFAULT_NWEB,
       numberValOrDefault(depth, DEFAULT_DEPTH),
+      numberValOrDefault(depthEnd, DEFAULT_DEPTH_END),
       trussType || DEFAULT_TRUSS_TYPE
     );
-  }, [span, height, nWeb, depth, trussType, throttledFetchGeometry]);
+  }, [span, height, nWeb, depth, depthEnd, trussType, throttledFetchGeometry]);
 
   // hide results if any input changes
   useEffect(() => {
@@ -658,7 +657,7 @@ export default function StandardForm({
           </Grid>
           <Grid item xs={12}>
             <Grid container spacing={2}>
-              <Grid item xs={includeDepth ? 4 : 6} sm={includeDepth ? 2 : 3}>
+              <Grid item xs={includeDepth && !includeDepthEnd ? 4 : 6} md={2}>
                 <NumInput
                   label="Truss Span"
                   value={span ?? ""}
@@ -669,7 +668,7 @@ export default function StandardForm({
                   step={1}
                 />
               </Grid>
-              <Grid item xs={includeDepth ? 4 : 6} sm={includeDepth ? 2 : 3}>
+              <Grid item xs={includeDepth && !includeDepthEnd ? 4 : 6} md={2}>
                 <NumInput
                   label="Truss Height"
                   value={height ?? ""}
@@ -681,9 +680,9 @@ export default function StandardForm({
                 />
               </Grid>
               {includeDepth && (
-                <Grid item xs={4} sm={2}>
+                <Grid item xs={includeDepthEnd ? 6 : 4} md={2}>
                   <NumInput
-                    label="Truss Depth"
+                    label={includeDepthEnd ? "Middle Depth" : "Truss Depth"}
                     value={depth ?? ""}
                     onChange={handleSetDepth}
                     unit={unitToLength(unitType)}
@@ -694,14 +693,33 @@ export default function StandardForm({
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={6}>
+              {includeDepthEnd && (
+                <Grid item xs={6} md={2}>
+                  <NumInput
+                    label="Depth at Ends"
+                    value={depthEnd ?? ""}
+                    onChange={handleSetDepthEnd}
+                    unit={unitToLength(unitType)}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </Grid>
+              )}
+
+              <Grid item xs={12} md={includeDepthEnd ? 4 : 6}>
                 <Container>
                   <NumSlider
                     label="Number of Web Bays (per side):"
                     value={nWeb ?? DEFAULT_NWEB}
                     onChange={setNWeb}
                     min={1}
-                    max={trussType === "ParallelChordRoofTruss" ? 18 : 10}
+                    max={
+                      trussType === "ParallelChordRoofTruss" ||
+                      trussType === "SemiParallelChordRoofTruss"
+                        ? 18
+                        : 10
+                    }
                     step={1}
                   />
                 </Container>

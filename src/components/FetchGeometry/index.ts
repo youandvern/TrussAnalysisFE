@@ -1,9 +1,7 @@
 import ApiGeometry, { ApiGeometryGlobal } from "../../Types/ApiGeometry";
 
-export const API_URL = "https://api.encompapp.com";
-// export const API_URL = "http://127.0.0.1:8000";
-
-// https://www.smashingmagazine.com/2020/07/custom-react-hook-fetch-cache-data/
+// export const API_URL = "https://api.encompapp.com";
+export const API_URL = "http://127.0.0.1:8000";
 
 interface FetchObject {
   show: boolean;
@@ -15,15 +13,22 @@ export const FetchGeometry = (
   height: number,
   nWeb: number,
   trussDepth?: number,
+  trussDepthEnd?: number,
   trussType?: string
 ): Promise<FetchObject> => {
-  const depth = trussType === "ParallelChordRoofTruss" || "ScissorTruss" ? trussDepth : undefined;
+  const depth = ["ParallelChordRoofTruss", "ScissorTruss", "SemiParallelChordRoofTruss"].includes(
+    trussType || ""
+  )
+    ? trussDepth
+    : undefined;
+  const depthEnd = trussType === "SemiParallelChordRoofTruss" ? trussDepthEnd : undefined;
 
   const request_dict = {
     span: span,
     height: height,
     nWeb: nWeb,
     trussDepth: depth,
+    trussDepthEnd: depthEnd,
     trussType: trussType,
   } as ApiGeometryGlobal;
 
@@ -34,7 +39,7 @@ export const FetchGeometry = (
       members: { 1: { start: 2, end: 1, type: "chord" } },
     } as ApiGeometry;
 
-    const res = await fetch(`${API_URL}/api/truss-analysis/geometry/`, {
+    const res = await fetch(`${API_URL}/api/geometry/`, {
       method: "POST",
       cache: "no-cache",
       headers: {

@@ -1,14 +1,14 @@
-import React from "react";
 import {
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   Container,
-  useMediaQuery,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
   Theme,
+  useMediaQuery,
 } from "@mui/material/";
 import { grey } from "@mui/material/colors";
+import React from "react";
 import TrussCategorySelector, { TrussCategory } from "../TrussCategorySelector";
 
 interface TrussType {
@@ -22,6 +22,7 @@ export const ROOF_TRUSS_TYPES: TrussType[] = [
   { type: "FinkRoofTruss", label: "Fink Roof" },
   { type: "ScissorTruss", label: "Scissor Truss" },
   { type: "ParallelChordRoofTruss", label: "Parallel Chord Roof" },
+  { type: "SemiParallelChordRoofTruss", label: "Semi-Parallel Chord Roof" },
 ];
 export const BRIDGE_TRUSS_TYPES: TrussType[] = [
   { type: "PrattBridgeTruss", label: "Pratt Bridge" },
@@ -34,12 +35,12 @@ export const TRUSS_TYPES = [...BRIDGE_TRUSS_TYPES, ...ROOF_TRUSS_TYPES] as Truss
 const SMALL_ROOF = [
   [ROOF_TRUSS_TYPES[0], ROOF_TRUSS_TYPES[1]],
   [ROOF_TRUSS_TYPES[2], ROOF_TRUSS_TYPES[3]],
-  [ROOF_TRUSS_TYPES[4]],
+  [ROOF_TRUSS_TYPES[4], ROOF_TRUSS_TYPES[5]],
 ];
 
 const BIG_ROOF = [
   [ROOF_TRUSS_TYPES[0], ROOF_TRUSS_TYPES[1], ROOF_TRUSS_TYPES[2]],
-  [ROOF_TRUSS_TYPES[3], ROOF_TRUSS_TYPES[4]],
+  [ROOF_TRUSS_TYPES[3], ROOF_TRUSS_TYPES[4], ROOF_TRUSS_TYPES[5]],
 ];
 
 const SMALL_BRIDGE = [[BRIDGE_TRUSS_TYPES[0]], [BRIDGE_TRUSS_TYPES[1]], [BRIDGE_TRUSS_TYPES[2]]];

@@ -34,6 +34,7 @@ export interface ApiGeometryGlobal {
   height: number;
   nWeb: number;
   trussDepth?: number;
+  trussDepthEnd?: number;
   trussType?: string;
   eMod?: MemberPropsType;
   aCross?: MemberPropsType;

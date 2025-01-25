@@ -21,7 +21,7 @@ import {
 import { Members, Nodes } from "../../Types/ApiGeometry";
 import CalculateOnEmailButton from "../CalculateOnEmailButton";
 import CalculationReport from "../CalculationReport";
-import { FetchCustomAnalysis } from "../FetchCustomAnalysis";
+import { fetchAnalysis } from "../FetchCustomAnalysis";
 import MemberForceResults from "../MemberForceResults";
 import TrussGraph from "../TrussGraph";
 import {
@@ -320,7 +320,7 @@ export default function CustomForm({
       E: (member.E || 1) * stressUnitConversionFactor,
     }));
     const forceCorrectedNodes = customNodes.map((node) => ({ ...node, Fy: -1 * (node.Fy || 0) }));
-    FetchCustomAnalysis({ nodes: forceCorrectedNodes, members: unitCorrectedMembers })
+    fetchAnalysis({ nodes: forceCorrectedNodes, members: unitCorrectedMembers })
       .then((result) => {
         setIsStable(result.isStable);
         if (!result.success) {

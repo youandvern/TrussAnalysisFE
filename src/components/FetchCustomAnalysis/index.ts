@@ -1,14 +1,10 @@
+import { ApiCustomAnalysisResults, CustomAnalysisRequest } from "../../Types/ApiAnalysisResults";
 import { API_URL } from "../FetchGeometry";
-import {
-  ApiCustomAnalysisResults,
-  CustomAnalysisRequest,
-  MemberAnalysisResults,
-} from "../../Types/ApiAnalysisResults";
 
-export const FetchCustomAnalysis = async (
+export const fetchAnalysis = async (
   request: CustomAnalysisRequest
 ): Promise<ApiCustomAnalysisResults> => {
-  const res = await fetch(`${API_URL}/api/truss-analysis/custom-analysis/`, {
+  const res = await fetch(`${API_URL}/api/analyze/`, {
     method: "POST",
     cache: "no-cache",
     headers: {
