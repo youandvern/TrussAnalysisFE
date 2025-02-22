@@ -9,8 +9,7 @@ import {
   Typography,
 } from "@mui/material/";
 import React from "react";
-import { NumInputSimple } from "../NumInput";
-import "./style.css";
+import { NumInputSimple } from "./FormComponents/NumInput";
 
 // expected properties given to DataTable
 interface TableProps {

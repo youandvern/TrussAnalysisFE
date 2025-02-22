@@ -1,7 +1,7 @@
 import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
 import { FormEvent, useState } from "react";
 import { CustomNode, SupportType } from "../../../Types/ApiAnalysisResults";
-import NumInput from "../../NumInput";
+import NumInput from "../../FormComponents/NumInput";
 import { unitToForce, unitToLength } from "../../UnitSelector";
 import { allNumbers } from "../utils";
 

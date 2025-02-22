@@ -1,8 +1,7 @@
-import React from "react";
-import "./style.css";
-import { Container, Grid, Typography, Link } from "@mui/material/";
 import HomeIcon from "@mui/icons-material/Home";
+import { Container, Grid, Link, Typography } from "@mui/material/";
 import ENCOMP from "./ENCOMP.png";
+import "./style.css";
 
 // Home bar with logo
 export default function HomeBar() {

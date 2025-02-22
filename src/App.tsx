@@ -1,7 +1,6 @@
-import React from "react";
+import { Container, createTheme, ThemeProvider } from "@mui/material";
 import "./App.css?v=1";
-import { createTheme, ThemeProvider, Container } from "@mui/material";
-import TrussForm from "./components/TrussForm";
+import TrussForm from "./components/TrussForm/TrussForm";
 
 const GLOBAL_THEME = createTheme({
   breakpoints: {

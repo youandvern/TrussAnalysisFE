@@ -1,7 +1,7 @@
 import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
 import { FormEvent, useState } from "react";
 import { CustomMember, MemberGroup } from "../../../Types/ApiAnalysisResults";
-import NumInput from "../../NumInput";
+import NumInput from "../../FormComponents/NumInput";
 import { validateMember } from "./member-validator";
 
 type Props = {

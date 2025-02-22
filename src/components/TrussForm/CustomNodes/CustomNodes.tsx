@@ -1,3 +1,6 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
   AccordionDetails,
@@ -9,16 +12,13 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import DataTableSimple from "../../DataTableSimple";
-import { CustomNode } from "../../../Types/ApiAnalysisResults";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import AddOneNode from "./AddOneNode";
-import AddMultipleNodes from "./AddMultipleNodes";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useState } from "react";
-import EditNodeForm from "./EditNodeForm";
+import { CustomNode } from "../../../Types/ApiAnalysisResults";
+import DataTableSimple from "../../DataTableSimple";
 import { numTruncator } from "../utils";
+import AddMultipleNodes from "./AddMultipleNodes";
+import AddOneNode from "./AddOneNode";
+import EditNodeForm from "./EditNodeForm";
 
 const NodeActions = (
   nodeIndex: number,

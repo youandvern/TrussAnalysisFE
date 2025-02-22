@@ -19,7 +19,7 @@ import {
 } from "../../Types/ApiAnalysisResults";
 import { Nodes } from "../../Types/ApiGeometry";
 import { fetchAnalysis } from "../ApiHooks/FetchAnalysis";
-import CalculationReport from "../CalculationReport";
+import CalculationReport from "../CalculationReport/CalculationReport";
 import MemberForceResults from "../MemberForceResults";
 import CalculateOnEmailButton from "../SubmitButtons/AnalyzeOnEmail";
 import TrussGraph from "../TrussGraph";

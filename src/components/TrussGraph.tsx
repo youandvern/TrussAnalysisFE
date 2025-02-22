@@ -3,10 +3,10 @@ import { Arrow, Circle, Label, Layer, Line, Rect, Stage, Tag, Text } from "react
 import "./style.css";
 
 import React from "react";
-import { GLOBAL_THEME } from "../../App";
-import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
-import { MemberForcesSummary } from "../../Types/ApiForces";
-import { dataToColorScale, getColorFromId } from "../Utilities/DataToColorscale";
+import { GLOBAL_THEME } from "../App";
+import { CustomMember, CustomNode } from "../Types/ApiAnalysisResults";
+import { MemberForcesSummary } from "../Types/ApiForces";
+import { dataToColorScale, getColorFromId } from "./Utilities/DataToColorscale";
 
 // force the truss to start at (0, 0)
 function getPositionCorrectedNodes(nodes: CustomNode[]): CustomNode[] {

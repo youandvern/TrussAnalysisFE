@@ -9,7 +9,7 @@ import {
 } from "@mui/material/";
 import { grey } from "@mui/material/colors";
 import React from "react";
-import TrussCategorySelector, { TrussCategory } from "../TrussCategorySelector";
+import TrussCategorySelector, { TrussCategory } from "./TrussCategorySelector";
 
 interface TrussType {
   type: string;

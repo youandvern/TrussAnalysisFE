@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import NumInput from "../NumInput";
+import NumInput from "../FormComponents/NumInput";
 import { isNotNumber } from "./utils";
 
 export type OptionalForces = { fx?: number; fy?: number };

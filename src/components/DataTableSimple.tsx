@@ -8,7 +8,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material/";
-import "./style.css";
 
 // expected properties given to DataTable
 interface TableProps {

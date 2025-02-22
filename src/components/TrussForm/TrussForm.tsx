@@ -2,7 +2,7 @@ import { Grid, Theme, useMediaQuery } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { StringParam, useQueryParam } from "use-query-params";
 import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
-import LabeledSwitch from "../LabeledSwitch";
+import LabeledSwitch from "../FormComponents/LabeledSwitch";
 import { TrussCategory } from "../TrussCategorySelector";
 import TrussStyleSelector, {
   BRIDGE_TRUSS_TYPES,

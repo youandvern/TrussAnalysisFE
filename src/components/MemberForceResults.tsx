@@ -1,8 +1,8 @@
 import { Collapse, Container } from "@mui/material";
-import { MemberAnalysisResults } from "../../Types/ApiAnalysisResults";
-import DataTable from "../DataTableControlled";
-import { unitToForce, unitToLength } from "../UnitSelector";
-import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import { MemberAnalysisResults } from "../Types/ApiAnalysisResults";
+import DataTable from "./DataTableControlled";
+import { unitToForce, unitToLength } from "./UnitSelector";
+import { memberNodesFormatter } from "./Utilities/memberNodesFormatter";
 
 interface MemberForceResultProps {
   showResult: boolean;

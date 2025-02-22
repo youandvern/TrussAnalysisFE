@@ -4,7 +4,7 @@ import { BrowserRouter, Route } from "react-router-dom";
 import { QueryParamProvider } from "use-query-params";
 import App from "./App";
 import { initializeMathJax } from "./components/CalculationReport/mathjaxSetup";
-import HomeBar from "./components/HomeBar";
+import HomeBar from "./components/HomeBar/HomeBar";
 import "./index.css?v=1";
 import reportWebVitals from "./reportWebVitals";
 
