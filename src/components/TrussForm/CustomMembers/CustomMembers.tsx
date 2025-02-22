@@ -15,7 +15,6 @@ import {
 import { ComponentProps, useState } from "react";
 import { CustomMember } from "../../../Types/ApiAnalysisResults";
 import DataTableSimple from "../../DataTableSimple";
-import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import AddMultipleMembers from "./AddMultipleMembers";
 import AddOneMember from "./AddOneMember";
 import EditMemberForm from "./EditMemberForm";
@@ -70,9 +69,6 @@ export default function CustomMembers({
 }: Props & ComponentProps<typeof MemberGroups>) {
   const [currentMemberIndex, setCurrentMemberIndex] = useState<number>();
 
-  const areaUnit = unitToInputArea(unitType);
-  const stressUnit = unitToInputStress(unitType);
-
   const onClickEdit = (index: number) => {
     setCurrentMemberIndex(index);
   };
@@ -95,21 +91,11 @@ export default function CustomMembers({
           <DataTableSimple
             condensed
             centered
-            headerList={[
-              "Member ID",
-              `Start Node`,
-              `End Node`,
-              `Section Area (${areaUnit})`,
-              `Elastic Modulus (${stressUnit})`,
-              "Group ID",
-              "Edit/Delete",
-            ]}
+            headerList={["Member ID", `Start Node`, `End Node`, "Group ID", "Edit/Delete"]}
             dataList={customMembers.map((member, index) => [
               index,
               member.start,
               member.end,
-              member.A,
-              member.E,
               member.groupId,
               MemberActions(index, onClickEdit, handleDeleteMember),
             ])}
@@ -171,12 +157,9 @@ export default function CustomMembers({
             <EditMemberForm
               currentStart={customMembers[currentMemberIndex].start}
               currentEnd={customMembers[currentMemberIndex].end}
-              currentA={customMembers[currentMemberIndex].A}
-              currentE={customMembers[currentMemberIndex].E}
               currentGroupId={customMembers[currentMemberIndex].groupId}
               memberGroups={memberGroups}
               nodeCount={nodeCount}
-              unitType={unitType}
               onSubmit={onSubmitEdit}
               onClose={onCloseEdit}
             />

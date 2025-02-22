@@ -1,20 +1,29 @@
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { Box, styled, Theme, Typography, useMediaQuery } from "@mui/material";
 import { useMemo } from "react";
-import { MemberGroup, SupportReaction } from "../../Types/ApiAnalysisResults";
-import { Members } from "../../Types/ApiGeometry";
+import {
+  AnalysisMember,
+  CustomMember,
+  CustomNode,
+  MemberAnalysisResults,
+  MemberGroup,
+  SupportReaction,
+} from "../../Types/ApiAnalysisResults";
+import { MemberGroupDesignResults } from "../../Types/ApiDesignResults";
 import DataTableSimple from "../DataTableSimple";
-import TrussGraph, { GeometryProps } from "../TrussGraph";
+import TrussGraph from "../TrussGraph";
 import {
   unitToAreaFactorInputToCalc,
   unitToForce,
-  unitToInputArea,
   unitToInputLength,
   unitToInputStress,
   unitToLength,
   unitToStressFactorInputToCalc,
 } from "../UnitSelector";
-import { getColorFromId } from "../Utilities/DataToColorscale";
+import { dataToColorScale, getColorFromId } from "../Utilities/DataToColorscale";
+import { summarizeMemberForces } from "../Utilities/memberForces";
+import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import CalcReport from "./efficalc/CalcReport";
 import EndNodeSymbol from "./images/EndNodeSymbol.png";
 import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
 import MemberAngleSymbol from "./images/MemberAngleSymbol.png";
@@ -27,17 +36,17 @@ const matrixNumTruncatorRelative0 = (val: number, absMax: number, precision?: nu
   if (relativeFactor < 0.000001) {
     return 0;
   } else {
-    return matrixNumTruncator(val, precision);
+    return numTruncator(val, precision);
   }
 };
 
-const matrixNumTruncator = (val: number, precision?: number) =>
-  +val.toPrecision(precision ? precision : 3) / 1;
+const numTruncator = (val: number | string | undefined, precision?: number) =>
+  val ? +(+val).toPrecision(precision ? precision : 3) : 0;
 
 const arrayToMatrix = (array: any[]) => {
   let matrix = [];
   for (let j = 0; j < array.length; j += 2) {
-    matrix.push([j / 2, matrixNumTruncator(array[j]), matrixNumTruncator(array[j + 1])]);
+    matrix.push([j / 2, numTruncator(array[j]), numTruncator(array[j + 1])]);
   }
   return matrix;
 };
@@ -95,8 +104,8 @@ const trigMatrixArray = [
   [exponent("-cs", ""), exponent("-s", "2"), exponent("cs", ""), exponent("s", "2")],
 ];
 
-const getMemberGroupToMemberMap = (members: Members) => {
-  return Object.entries(members).reduce<Record<number, string[]>>((acc, [id, member]) => {
+const getMemberGroupToMemberMap = (members: CustomMember[]) => {
+  return members.reduce<Record<number, number[]>>((acc, member, id) => {
     const groupId = member.groupId ?? 0;
     acc[groupId] = acc[groupId] || []; // Initialize the group if it doesn't exist
     acc[groupId].push(id); // Add the member to the group
@@ -108,55 +117,63 @@ export type MemberProperty = { id: number; A: number; E: number };
 
 // expected properties given to Labeled Switch
 interface CalcReportProps {
-  geometryProps: GeometryProps;
-  memberForces: (number | JSX.Element)[][];
-  memberForcesHeaders: string[];
-  memberProperties: MemberProperty[];
+  nodes: CustomNode[];
+  members: AnalysisMember[];
+  memberGroups: MemberGroup[];
+  memberResults: MemberAnalysisResults[];
   displacements: number[];
+  reactions: SupportReaction[];
   member0StiffnessMatrix: number[][];
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
-  useDefaultMemberProps: boolean;
+  frameWidth: number;
+  frameHeight: number;
+  memberGroupDesigns?: Record<number, MemberGroupDesignResults>;
   unitType?: string;
-  reactions: SupportReaction[];
-  memberGroups: MemberGroup[];
 }
+
+// TODO: add design groups summary and designs in new design section
 
 // Div holding calculation report
 export default function CalculationReport({
-  geometryProps,
-  memberForces,
-  memberForcesHeaders,
-  memberProperties,
+  nodes,
+  members,
+  memberGroups,
+  memberResults,
   displacements,
+  reactions,
   member0StiffnessMatrix,
   structureStiffnessMatrix,
   structureReducedStiffnessMatrix,
   reducedForceMatrix,
-  useDefaultMemberProps,
   unitType,
-  reactions,
-  memberGroups,
+  frameWidth,
+  frameHeight,
+  memberGroupDesigns,
 }: CalcReportProps) {
   const lengthUnit = unitToLength(unitType);
   const inputLengthUnit = unitToInputLength(unitType);
   const forceUnit = unitToForce(unitType);
-  const nodeSizeEst = Math.max(geometryProps.trussHeight * 3, geometryProps.trussWidth) / 100;
-  const totalWidth = geometryProps.trussWidth + 8 * nodeSizeEst;
-  const totalHeight = geometryProps.trussHeight + 9 * nodeSizeEst;
-  const trussOnlyFrameHeight = Math.min(
-    geometryProps.frameHeight,
-    (geometryProps.frameWidth * totalHeight) / totalWidth
-  );
-  const nNodes = Object.keys(geometryProps.nodes).length;
 
-  const member0A = memberProperties[0].A;
-  const member0E = memberProperties[0].E;
-  const member0Length = +memberForces[0][2];
+  const nodeYs = Object.values(nodes).map((n) => n.y);
+  const nodeXs = Object.values(nodes).map((n) => n.x);
+  const trussHeight = Math.max(...nodeYs) - Math.min(...nodeYs);
+  const trussWidth = Math.max(...nodeXs) - Math.min(...nodeXs);
+
+  const nodeSizeEst = Math.max(trussHeight * 3, trussWidth) / 100;
+  const totalWidth = trussWidth + 8 * nodeSizeEst;
+  const totalHeight = trussHeight + 9 * nodeSizeEst;
+  const trussOnlyFrameHeight = Math.min(frameHeight, (frameWidth * totalHeight) / totalWidth);
+  const nNodes = nodes.length;
+
+  const member0A = members[0].aCross * 144;
+  const member0E = members[0].eMod / 144;
+
+  const member0Length = memberResults[0].length;
   const factoredK0 = member0StiffnessMatrix.map((row) =>
     row.map((cell) =>
-      matrixNumTruncator(
+      numTruncator(
         (cell * member0Length) /
           (unitToAreaFactorInputToCalc(unitType) *
             member0A *
@@ -166,11 +183,17 @@ export default function CalculationReport({
     )
   );
 
-  const kFull = structureStiffnessMatrix.map((row) => row.map((val) => matrixNumTruncator(val)));
-  const kReduced = structureReducedStiffnessMatrix.map((row) =>
-    row.map((val) => matrixNumTruncator(val))
+  const memberForcesSummary = summarizeMemberForces(memberResults);
+
+  const memberForceColors: string[] = memberResults.map((res) =>
+    dataToColorScale(res.axial, memberForcesSummary.max, memberForcesSummary.min)
   );
-  const fReduced = [reducedForceMatrix.map((val) => matrixNumTruncator(val))];
+
+  const kFull = structureStiffnessMatrix.map((row) => row.map((val) => numTruncator(val)));
+  const kReduced = structureReducedStiffnessMatrix.map((row) =>
+    row.map((val) => numTruncator(val))
+  );
+  const fReduced = [reducedForceMatrix.map((val) => numTruncator(val))];
   const absMaxReaction =
     reactions?.reduce(
       (max, reaction) => Math.max(Math.abs(reaction.x), Math.abs(reaction.y), max),
@@ -185,10 +208,7 @@ export default function CalculationReport({
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
-  const groupIdToMembers = useMemo(
-    () => getMemberGroupToMemberMap(geometryProps.members),
-    [geometryProps]
-  );
+  const groupIdToMemberIds = useMemo(() => getMemberGroupToMemberMap(members), [members]);
 
   return (
     <div className="calc-report-container" id="calc-report-container">
@@ -202,17 +222,22 @@ export default function CalculationReport({
         and member configurations are also summarized in Table 1 and Table 2 below.
       </p>
       <p>
-        The total span of the truss is {geometryProps.trussWidth} {lengthUnit} and overall height of
-        the truss is {geometryProps.trussHeight} {lengthUnit}.
+        The total span of the truss is {trussWidth} {lengthUnit} and overall height of the truss is{" "}
+        {trussHeight} {lengthUnit}.
       </p>
       {TrussGraph({
-        ...geometryProps,
+        trussHeight,
+        trussWidth,
+        nodes,
+        members,
+        memberForceColors,
+        memberForcesSummary: undefined,
         frameHeight: trussOnlyFrameHeight,
+        frameWidth,
         showAxes: false,
         showNodeLabels: true,
         showMemberLabels: true,
         showForceArrows: false,
-        memberForcesSummary: undefined,
         keySeed: "1",
       })}
       {caption("Figure 1: Truss global configuration")}
@@ -223,18 +248,24 @@ export default function CalculationReport({
           `Y-Position (${lengthUnit})`,
           "Fixity (if not free)",
         ]}
-        dataList={Object.entries(geometryProps.nodes).map(([index, val]) => [
+        dataList={nodes.map((val, index) => [
           index,
-          matrixNumTruncator(val.x),
-          matrixNumTruncator(val.y),
-          val.fixity === "free" ? "--" : val.fixity,
+          numTruncator(val.x),
+          numTruncator(val.y),
+          val.support === "free" ? "--" : val.support,
         ])}
       />
       {caption("Table 1: Structure node geometry")}
+
       <DataTableSimple
-        headerList={memberForcesHeaders.slice(0, 3)}
-        dataList={memberForces.map((memForce) => memForce.slice(0, 3))}
+        headerList={["Member ID", "Start -> End Node", `Length (${lengthUnit})`]}
+        dataList={memberResults.map((mem, index) => [
+          index,
+          memberNodesFormatter(mem.start, mem.end),
+          Math.abs(mem.length) < 0.0001 ? 0 : +mem.length.toPrecision(4),
+        ])}
       />
+
       {caption("Table 2: Structure member geometry")}
       <h3>2. Applied Loading to Nodes</h3>
       <p>
@@ -243,27 +274,36 @@ export default function CalculationReport({
         applied to it.
       </p>
       {TrussGraph({
-        ...geometryProps,
+        trussHeight,
+        trussWidth,
+        nodes,
+        members,
+        memberForceColors,
+        memberForcesSummary,
+        frameWidth,
         frameHeight: trussOnlyFrameHeight,
         showAxes: false,
         showNodeLabels: true,
         showMemberLabels: false,
         showForceArrows: true,
-        memberForcesSummary: undefined,
         keySeed: "2",
       })}
       {caption(
         "Figure 2: Graphical representation of loads applied to the structure (arrow length not to scale)"
       )}
+
       <DataTableSimple
         headerList={["Node ID", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
         dataList={
-          geometryProps.nodeForces
-            ?.filter((forceRow) => forceRow[1] !== 0 || forceRow[2] !== 0)
-            .map((forces) => [forces[0], forces[1], -forces[2]]) || [[0, 0, 0]]
+          nodes
+            .filter((node) => (node.Fx && node.Fx !== 0) || (node.Fy && node.Fy !== 0))
+            .map((node, index) => [index, numTruncator(node.Fx, 4), -numTruncator(node.Fy)]) || [
+            [0, 0, 0],
+          ]
         }
       />
       {caption("Table 3: Applied loading to nodes")}
+
       <h3>3. Truss Analysis Using the Direct Stiffness Method</h3>
       <p>
         With the truss geometry and loading defined above, the member forces and deflections are
@@ -328,26 +368,7 @@ export default function CalculationReport({
         <span>E </span> <ArrowForwardIcon />
         <span> Member material modulus of elasticity</span>
       </div>
-      {useDefaultMemberProps ? (
-        <p>
-          For member axial demand analysis of a determinate truss, A and E may be set equal to any
-          constant for all members. In this analaysis, A has been set to {member0A}{" "}
-          {inputLengthUnit} <sup>2</sup> and E has been set to {member0E}{" "}
-          {unitToInputStress(unitType)}.
-        </p>
-      ) : (
-        <>
-          <p>In this analaysis, A and E have been set to the following values:</p>
-          <DataTableSimple
-            headerList={[
-              "Member ID",
-              `Cross-sectional Area (${unitToInputArea(unitType)})`,
-              `Elastic Modulus (${unitToInputStress(unitType)})`,
-            ]}
-            dataList={memberProperties.map((props) => [props.id, props.A, props.E])}
-          />
-        </>
-      )}
+
       <p>For simplicity in this general example, the following constants are calculated:</p>
       <div className="equation-div">
         <p>c=cosθ</p>
@@ -419,15 +440,6 @@ export default function CalculationReport({
         Then, the known support displacements of 0 are added to compose the global stiffness matrix,
         D.
       </p>
-      {useDefaultMemberProps && (
-        <p>
-          **If member cross-sectional areas and material properties are not representative of the
-          real-life truss elements, each node displacement is only of value in comparison to each of
-          the others. These relative displacements are used to calculate the internal member forces
-          in the determinate truss but will not necessarily be representative of the actual
-          displacements of the truss.
-        </p>
-      )}
 
       <p>
         The resulting displacement at each node along with known support displacements are given
@@ -486,21 +498,29 @@ export default function CalculationReport({
         forces.
       </p>
       {TrussGraph({
-        ...geometryProps,
+        trussHeight,
+        trussWidth,
+        nodes,
+        members,
+        memberForceColors,
+        frameWidth,
+        memberForcesSummary,
+        frameHeight: trussOnlyFrameHeight,
         showAxes: false,
         showNodeLabels: false,
         showMemberLabels: true,
         showForceArrows: false,
         keySeed: "3",
-        memberColor: "force",
+        memberColorStyle: "force",
       })}
       {caption(`Figure 4: Structure member loading (${forceUnit})`)}
+
       <DataTableSimple
         headerList={["Member ID", `Length (${lengthUnit})`, `Axial Demand (${forceUnit})`]}
-        dataList={memberForces.map((row) => [
-          row[0],
-          matrixNumTruncator(+row[2], 4),
-          matrixNumTruncator(+row[3], 4),
+        dataList={memberResults.map((res) => [
+          res.index,
+          numTruncator(res.length, 4),
+          numTruncator(res.axial, 4),
         ])}
       />
       {caption("Table 5: Structure member demand summary (+Compression/-Tension)")}
@@ -525,7 +545,7 @@ export default function CalculationReport({
       />
       {caption("Table 6: Structure support reaction summary")}
 
-      <h3>4. Member Design Groups</h3>
+      <h3>4. Member Design</h3>
       <p>
         Members will be designed based on their grouping. An appropriate section size which passes
         the design checks for every member of a given group will be selected and assigned to each
@@ -534,7 +554,12 @@ export default function CalculationReport({
       <h4>4.1 Member Design Groups</h4>
 
       {TrussGraph({
-        ...geometryProps,
+        trussHeight,
+        trussWidth,
+        nodes,
+        members,
+        memberForceColors,
+        frameWidth,
         frameHeight: trussOnlyFrameHeight,
         showAxes: false,
         showNodeLabels: false,
@@ -542,7 +567,7 @@ export default function CalculationReport({
         showForceArrows: false,
         memberForcesSummary: undefined,
         keySeed: "4",
-        memberColor: "group",
+        memberColorStyle: "group",
       })}
       {caption("Figure 5: Truss with member ids and colored members based on member design group")}
 
@@ -557,10 +582,29 @@ export default function CalculationReport({
             height={"1em"}
             bgcolor={getColorFromId(group.id)}
           ></Box>,
-          (groupIdToMembers[group.id] || []).join(", "),
+          (groupIdToMemberIds[group.id] || []).join(", "),
         ])}
       />
       {caption("Table 7: Member group definitions")}
+
+      <h4>4.2 Member Design Summary</h4>
+      <DataTableSimple
+        headerList={["Group ID", "Designed Size", `Total Length (${lengthUnit})`]}
+        dataList={Object.entries(memberGroupDesigns || {}).map(([groupId, groupDesign]) => [
+          groupId,
+          groupDesign.designSize,
+          numTruncator(groupDesign.totalLength, 4),
+        ])}
+      />
+      {caption("Table 8: Member group design summary")}
+
+      <h2>Appendix 1: Member design calculations</h2>
+      {Object.entries(memberGroupDesigns || {}).map(([groupId, groupDesign]) => (
+        <>
+          <h4>Member Design For Group {groupId}</h4>
+          <CalcReport runResults={groupDesign.designCalcItems} paperView={false} />
+        </>
+      ))}
 
       <Typography marginTop="3rem" textAlign="right">
         Powered by{" "}

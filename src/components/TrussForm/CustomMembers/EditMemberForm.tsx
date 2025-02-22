@@ -2,18 +2,14 @@ import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "
 import { FormEvent, useState } from "react";
 import { CustomMember, MemberGroup } from "../../../Types/ApiAnalysisResults";
 import NumInput from "../../NumInput";
-import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import { validateMember } from "./member-validator";
 
 type Props = {
   currentStart: number;
   currentEnd: number;
-  currentA?: number;
-  currentE?: number;
   currentGroupId: number;
   nodeCount: number;
   memberGroups: MemberGroup[];
-  unitType: string;
   onSubmit: (member: CustomMember) => void;
   onClose: () => void;
 };
@@ -21,34 +17,21 @@ type Props = {
 export default function EditMemberForm({
   currentStart,
   currentEnd,
-  currentA,
-  currentE,
   currentGroupId,
   nodeCount,
   memberGroups,
-  unitType,
   onSubmit,
   onClose,
 }: Props) {
   const [start, setStart] = useState(`${currentStart}`);
   const [end, setEnd] = useState(`${currentEnd}`);
-  const [area, setArea] = useState(`${currentA}`);
-  const [eMod, setEmod] = useState(`${currentE}`);
   const [memberGroup, setMemberGroup] = useState(currentGroupId);
   const [validationError, setValidationError] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    const validMember = validateMember(
-      nodeCount,
-      start,
-      end,
-      area,
-      eMod,
-      memberGroup,
-      memberGroups.length
-    );
+    const validMember = validateMember(nodeCount, start, end, memberGroup, memberGroups.length);
 
     if (!validMember.valid) {
       setValidationError(validMember.error);
@@ -57,8 +40,6 @@ export default function EditMemberForm({
       onSubmit({
         start: validMember.start,
         end: validMember.end,
-        A: validMember.area,
-        E: validMember.eMod,
         groupId: validMember.groupId,
       });
     }
@@ -90,28 +71,6 @@ export default function EditMemberForm({
             unit=""
             min={0}
             max={999}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <NumInput
-            label="cross-sectional area"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            unit={unitToInputArea(unitType)}
-            min={0}
-            max={999999}
-            step="any"
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <NumInput
-            label="elastic modulus"
-            value={eMod}
-            onChange={(e) => setEmod(e.target.value)}
-            unit={unitToInputStress(unitType)}
-            min={0}
-            max={999999}
-            step="any"
           />
         </Grid>
         <Grid item xs={12}>

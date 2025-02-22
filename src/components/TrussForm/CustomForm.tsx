@@ -15,23 +15,17 @@ import {
   ApiCustomAnalysisResultsSuccess,
   CustomMember,
   CustomNode,
-  MemberAnalysisResults,
   MemberGroup,
 } from "../../Types/ApiAnalysisResults";
-import { Members, Nodes } from "../../Types/ApiGeometry";
-import CalculateOnEmailButton from "../CalculateOnEmailButton";
+import { Nodes } from "../../Types/ApiGeometry";
+import { fetchAnalysis } from "../ApiHooks/FetchAnalysis";
 import CalculationReport from "../CalculationReport";
-import { fetchAnalysis } from "../FetchCustomAnalysis";
 import MemberForceResults from "../MemberForceResults";
+import CalculateOnEmailButton from "../SubmitButtons/AnalyzeOnEmail";
 import TrussGraph from "../TrussGraph";
-import {
-  unitToAreaFactorInputToCalc,
-  unitToForce,
-  unitToLength,
-  unitToStressFactorInputToCalc,
-} from "../UnitSelector";
+import { unitToForce, unitToLength } from "../UnitSelector";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import { summarizeMemberForces } from "../Utilities/memberForces";
 import CustomMembers from "./CustomMembers/CustomMembers";
 import CustomNodes from "./CustomNodes/CustomNodes";
 import { Query2dNumberArray } from "./Query2dNumberArray";
@@ -39,17 +33,6 @@ import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
 import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
 import "./style.css";
 import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
-
-const summarizeMemberForces = (results: MemberAnalysisResults[]) => {
-  // Get spread of forces for color calculations
-  let max = results[0].axial;
-  let min = results[0].axial;
-  results.forEach((res) => {
-    max = Math.max(max, res.axial);
-    min = Math.min(min, res.axial);
-  });
-  return { max: max, min: min };
-};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -151,9 +134,6 @@ export default function CustomForm({
   const isGeometryEntered = nNodes >= 2;
   const isResultCalculated = !!customResults && customResults.isStable;
 
-  const memberForcesSummary =
-    customResults?.memberResults && summarizeMemberForces(customResults.memberResults);
-
   const nodesForGraph: Nodes =
     customNodes
       .map((node) => ({ x: node.x, y: node.y, fixity: node.support || "free" }))
@@ -168,40 +148,14 @@ export default function CustomForm({
   const forceUnit = unitToForce(unitType);
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
-  const membersForGraph: Members =
-    customMembers
-      .map((member, index) => ({
-        start: member.start,
-        end: member.end,
-        groupId: member.groupId,
-        forceColor:
-          memberForcesSummary &&
-          dataToColorScale(
-            customResults.memberResults[index].axial,
-            memberForcesSummary.max,
-            memberForcesSummary.min
-          ),
-      }))
-      .reduce((ob, val, index) => ({ ...ob, [index]: val }), {}) || {};
+  const memberForcesSummary =
+    customResults?.memberResults && summarizeMemberForces(customResults.memberResults);
 
-  const forcesForGraph: number[][] = customNodes.map((node, index) => [
-    index,
-    node.Fx || 0,
-    node.Fy || 0,
-  ]) || [[0, 0, 0]];
-
-  const memberResultHeaders = [
-    "Member ID",
-    "Start -> End Node",
-    `Length (${lengthUnit})`,
-    `Axial Force (${forceUnit})`,
-  ];
-  const memberResultsForDisplay = customResults?.memberResults.map((member) => [
-    member.index,
-    memberNodesFormatter(member.start, member.end),
-    Math.abs(member.length) < 0.0001 ? 0 : +member.length.toPrecision(4),
-    Math.abs(member.axial) < 0.0001 ? 0 : +member.axial.toPrecision(4),
-  ]);
+  const memberForceColors: string[] = memberForcesSummary
+    ? customResults.memberResults.map((res) =>
+        dataToColorScale(res.axial, memberForcesSummary.max, memberForcesSummary.min)
+      )
+    : [];
 
   const handleAddNodes = (nodes: CustomNode[]) => {
     setCustomNodes((cur) => (cur ? [...cur, ...nodes] : [...nodes]));
@@ -312,15 +266,8 @@ export default function CustomForm({
       return;
     }
 
-    const areaUnitConversionFactor = unitToAreaFactorInputToCalc(unitType);
-    const stressUnitConversionFactor = unitToStressFactorInputToCalc(unitType);
-    const unitCorrectedMembers = customMembers.map((member) => ({
-      ...member,
-      A: (member.A || 1) * areaUnitConversionFactor,
-      E: (member.E || 1) * stressUnitConversionFactor,
-    }));
     const forceCorrectedNodes = customNodes.map((node) => ({ ...node, Fy: -1 * (node.Fy || 0) }));
-    fetchAnalysis({ nodes: forceCorrectedNodes, members: unitCorrectedMembers })
+    fetchAnalysis({ nodes: forceCorrectedNodes, members: customMembers })
       .then((result) => {
         setIsStable(result.isStable);
         if (!result.success) {
@@ -335,7 +282,7 @@ export default function CustomForm({
       .catch((reason) => {
         setCustomError(`There was a problem analyzing this truss. ${reason}`);
       });
-  }, [customNodes, customMembers, unitType]);
+  }, [customNodes, customMembers, unitType, setShowMemberGroups]);
 
   useEffect(() => {
     handleHideAllResults();
@@ -347,11 +294,13 @@ export default function CustomForm({
       setCustomNodes(startingNodes);
     }
   }, [startingNodes]);
+
   useEffect(() => {
     if (!customMembers?.length && !!startingMembers?.length) {
       setCustomMembers(startingMembers);
     }
   }, [startingMembers]);
+
   useEffect(() => {
     if (!!startingMemberGroups?.length) {
       setMemberGroups(startingMemberGroups);
@@ -380,9 +329,10 @@ export default function CustomForm({
                 <TrussGraph
                   trussHeight={trussHeight}
                   trussWidth={trussWidth}
-                  nodes={nodesForGraph}
-                  members={membersForGraph}
-                  memberColor={showMemberGroups ? "group" : "force"}
+                  nodes={customNodes}
+                  members={customMembers}
+                  memberForceColors={memberForceColors}
+                  memberColorStyle={showMemberGroups ? "group" : "force"}
                   frameWidth={frameWidth}
                   frameHeight={frameHeight}
                   showNodeLabels={showNodeLabels}
@@ -390,7 +340,6 @@ export default function CustomForm({
                   showForceArrows={showForceArrows}
                   showAxes={true}
                   memberForcesSummary={memberForcesSummary}
-                  nodeForces={forcesForGraph}
                   onRender={onRenderGraph}
                 />
               </Box>
@@ -525,8 +474,8 @@ export default function CustomForm({
               <Grid item xs={12}>
                 <MemberForceResults
                   showResult={showMemberForces && hideCalculations}
-                  headers={memberResultHeaders}
-                  memberForceResults={memberResultsForDisplay || [[0, 0, 0, 0]]}
+                  results={customResults?.memberResults || []}
+                  unitType={unitType}
                 />
               </Grid>
             </Grid>
@@ -536,33 +485,19 @@ export default function CustomForm({
       <div id="print-only-calc-report" className="print-only-calc-report">
         {isResultCalculated && customMembers.length && customNodes.length && (
           <CalculationReport
-            geometryProps={{
-              trussHeight: trussHeight,
-              trussWidth: trussWidth,
-              nodes: nodesForGraph,
-              members: membersForGraph,
-              frameWidth: frameWidth,
-              frameHeight: frameHeight,
-              showNodeLabels: showNodeLabels,
-              showMemberLabels: showMemberLabels,
-              showForceArrows: showForceArrows,
-              memberForcesSummary: memberForcesSummary,
-              nodeForces: forcesForGraph,
-            }}
-            memberForces={memberResultsForDisplay || [[]]}
-            memberForcesHeaders={memberResultHeaders}
-            memberProperties={
-              customMembers.map((mem, index) => ({ id: index, A: mem.A || 1, E: mem.E || 1 })) || []
-            }
+            nodes={customNodes}
+            members={customResults.members}
+            memberGroups={memberGroups || []}
+            memberResults={customResults.memberResults}
             displacements={customResults.displacements || []}
+            reactions={customResults.reactions}
             member0StiffnessMatrix={customResults.member0StiffnessMatrix}
             structureStiffnessMatrix={customResults.structureStiffnessMatrix}
             structureReducedStiffnessMatrix={customResults.structureReducedStiffnessMatrix}
             reducedForceMatrix={customResults.reducedForceMatrix}
-            useDefaultMemberProps={false}
+            frameHeight={frameHeight}
+            frameWidth={frameWidth}
             unitType={unitType}
-            reactions={customResults.reactions}
-            memberGroups={memberGroups || []}
           />
         )}
       </div>

@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrayParam,
-  BooleanParam,
-  NumberParam,
-  ObjectParam,
-  StringParam,
-  useQueryParam,
-} from "use-query-params";
+import { ArrayParam, NumberParam, StringParam, useQueryParam } from "use-query-params";
 import "./style.css";
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -22,27 +15,30 @@ import {
   Typography,
 } from "@mui/material";
 
-import { CustomMember, CustomNode, SupportType } from "../../Types/ApiAnalysisResults";
-import { emptyApiForcesParsed, MemberForcesSummary } from "../../Types/ApiForces";
+import {
+  ApiCustomAnalysisResultsSuccess,
+  CustomMember,
+  CustomNode,
+  SupportType,
+} from "../../Types/ApiAnalysisResults";
+import { MemberGroupDesignResults } from "../../Types/ApiDesignResults";
 import ApiGeometry, { Members, Nodes } from "../../Types/ApiGeometry";
-import CalculateOnEmailButton from "../CalculateOnEmailButton";
+import { fetchAnalysis } from "../ApiHooks/FetchAnalysis";
+import { fetchDesign } from "../ApiHooks/FetchDesign";
+import { FetchGeometry } from "../ApiHooks/FetchGeometry";
 import CalculationReport from "../CalculationReport";
 import DataTable from "../DataTableControlled";
-import { fetchAnalysis } from "../FetchCustomAnalysis";
-import { FetchGeometry } from "../FetchGeometry";
 import MemberForceResults from "../MemberForceResults";
-import MemberPropertiesForm, {
-  MemberInputPropsType,
-  MemberPropsType,
-} from "../MemberPropertiesForm";
 import NumInput from "../NumInput";
 import NumSlider from "../NumSlider";
+import CalculateOnEmailButton from "../SubmitButtons/AnalyzeOnEmail";
+import DesignButton from "../SubmitButtons/DesignButton";
 import { TrussCategory } from "../TrussCategorySelector";
 import TrussGraph from "../TrussGraph";
 import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../TrussStyleSelector";
 import { unitToForce, unitToLength } from "../UnitSelector";
 import { dataToColorScale } from "../Utilities/DataToColorscale";
-import { memberNodesFormatter } from "../Utilities/memberNodesFormatter";
+import { summarizeMemberForces } from "../Utilities/memberForces";
 import LinearLoadForm, { LoadApplication, NodeGroup, OptionalForces } from "./LinearLoadForm";
 import { Query2dNumberArray } from "./Query2dNumberArray";
 import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
@@ -67,9 +63,6 @@ const DEFAULT_DEPTH = 1.5;
 const DEFAULT_DEPTH_END = 1;
 const DEFAULT_NWEB = 1;
 const DEFAULT_TRUSS_TYPE = TRUSS_TYPES[0].type;
-const DEFAULT_A = "5";
-const DEFAULT_E = "29000";
-const DEFAULT_USE_DEFAULT_MEMBER = true;
 const EMPTY_NODES: Nodes = { "0": { x: 0, y: 0, fixity: "free" } };
 const VALIDATION_ERROR = "All input values must be a valid number";
 
@@ -114,47 +107,6 @@ export function updateGroupId(members: Members): Members {
   return updatedMembers;
 }
 
-const getFromMemberPropsType = (props: MemberPropsType, type?: string) => {
-  const memberType: MemberType = type ? parseMemberType(type) : "web";
-  if (memberType === "top") {
-    return props.top;
-  } else if (memberType === "bot") {
-    return props.bot;
-  } else {
-    return props.web;
-  }
-};
-
-const queryToMemberProps = (
-  defaultVal: string,
-  objectVal:
-    | {
-        [key: string]: string | null | undefined;
-      }
-    | null
-    | undefined
-) =>
-  ({
-    top: +(objectVal?.top ?? defaultVal),
-    bot: +(objectVal?.bot ?? defaultVal),
-    web: +(objectVal?.web ?? defaultVal),
-  } as MemberPropsType);
-
-const queryToMemberInputProps = (
-  defaultVal: string,
-  objectVal:
-    | {
-        [key: string]: string | null | undefined;
-      }
-    | null
-    | undefined
-) =>
-  ({
-    top: objectVal?.top ?? defaultVal,
-    bot: objectVal?.bot ?? defaultVal,
-    web: objectVal?.web ?? defaultVal,
-  } as MemberInputPropsType);
-
 type Props = {
   trussCategory: TrussCategory;
   trussType: string | null;
@@ -198,12 +150,7 @@ export default function StandardForm({
   const [depth = DEFAULT_DEPTH, setDepth] = useQueryParam("depth", StringParam);
   const [depthEnd = DEFAULT_DEPTH_END, setDepthEnd] = useQueryParam("depthEnd", StringParam);
   const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
-  const [elasticModulusProps, setElasticModulusProps] = useQueryParam("eMod", ObjectParam);
-  const [areaProps, setAreaProps] = useQueryParam("area", ObjectParam);
-  const [useDefaultMember, setUseDefaultMember] = useQueryParam("defaultProps", BooleanParam);
   const [expandTrussLoads, setExpandTrussLoads] = useState(false);
-  const [expandSectionProperties, setExpandSectionProperties] = useState(false);
-  const [memberForcesSummary, setMemberForcesSummary] = useState<MemberForcesSummary>();
 
   const includeDepth = isDepthRelevant(trussType || "");
   const includeDepthEnd = isEndDepthRelevant(trussType || "");
@@ -213,7 +160,11 @@ export default function StandardForm({
   const DEFAULT_FORCES = useMemo(() => generateForces(nNodes), [nNodes]);
   const [forces, setForces] = useQueryParam("zforces", Query2dNumberArray);
 
-  const [standardizedForceResults, setStandardizedForceResults] = useState(emptyApiForcesParsed);
+  const [validationError, setValidationError] = useState("");
+  const [analysisError, setAnalysisError] = useState("");
+  const [analysisResults, setAnalysisResults] = useState<ApiCustomAnalysisResultsSuccess>();
+  const [designResults, setDesignResults] = useState<Record<number, MemberGroupDesignResults>>();
+
   const [hideCalculations, setHideCalculations] = useState(true);
   const [showMemberForces, setShowMemberForces] = useState(false);
 
@@ -225,15 +176,20 @@ export default function StandardForm({
 
   const forceUnit = unitToForce(unitType);
 
-  const areaPropsParsed = useRef(queryToMemberProps(DEFAULT_A, areaProps));
-  const elasticModulusPropsParsed = useRef(queryToMemberProps(DEFAULT_E, elasticModulusProps));
+  const memberForcesSummary =
+    analysisResults?.memberResults && summarizeMemberForces(analysisResults.memberResults);
+
+  const memberForceColors: string[] = memberForcesSummary
+    ? analysisResults.memberResults.map((res) =>
+        dataToColorScale(res.axial, memberForcesSummary.max, memberForcesSummary.min)
+      )
+    : [];
 
   const geometryRef = useRef(geometry);
   const forcesRef = useRef(forces);
 
-  const [validationError, setValidationError] = useState("");
-
   const clearValidationError = () => setValidationError("");
+  const clearAnalysisError = () => setAnalysisError("");
 
   const handleHideCalculations = () => {
     setHideCalculations(true);
@@ -247,7 +203,7 @@ export default function StandardForm({
 
   const handleHideAllResults = () => {
     setShowMemberForces(false);
-    setMemberForcesSummary(undefined);
+    setAnalysisResults(undefined);
     handleHideCalculations();
   };
 
@@ -270,6 +226,7 @@ export default function StandardForm({
     });
     handleHideAllResults();
     clearValidationError();
+    clearAnalysisError();
   };
 
   const resetForces = useCallback(() => {
@@ -277,22 +234,18 @@ export default function StandardForm({
     forcesRef.current = undefined;
     handleHideAllResults();
     clearValidationError();
+    clearAnalysisError();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nNodes, setForces]);
 
-  const updateMemberForcesStandard = useCallback(() => {
-    // Flip y-axis direction
-    const forcesCorrected = (
-      forces ?? generateForces(Object.keys(geometry?.nodes ?? {}).length ?? 0)
-    ).map((force) => [+force[0], +force[1], -1 * +force[2]]);
-
+  const { customNodes, customMembers } = useMemo(() => {
     const customNodes: CustomNode[] = Object.entries(geometry?.nodes ?? {}).map(
       ([k, node], idx) => ({
         x: node.x,
         y: node.y,
         support: node.fixity as SupportType,
-        Fx: forcesCorrected[idx][1],
-        Fy: forcesCorrected[idx][2],
+        Fx: forces ? +forces[idx][1] || 0 : 0,
+        Fy: forces ? +forces[idx][2] || 0 : 0,
       })
     );
 
@@ -305,62 +258,38 @@ export default function StandardForm({
         groupId: mem.type === "topChord" ? 0 : mem.type === "botChord" ? 1 : 2,
       })
     );
+    return { customNodes, customMembers };
+  }, [forces, geometry?.nodes, geometry?.members]);
 
-    fetchAnalysis({ nodes: customNodes, members: customMembers }).then((result) => {
-      if (!result.isStable || !result.success) {
-        setValidationError("Analysis failed. Please refresh the page and try again.");
-        return;
+  // TODO: do something with the results
+  const onDesignMembers = useCallback(async () => {
+    const forceCorrectedNodes = customNodes.map((node) => ({ ...node, Fy: -1 * (node.Fy || 0) }));
+    await fetchDesign({ nodes: forceCorrectedNodes, members: customMembers }).then((result) => {
+      if (!result.analysis.success || !result.analysis.isStable) {
+        setAnalysisError("Analysis failed. Please refresh the page and try again.");
+      } else {
+        clearAnalysisError();
+        setExpandTrussLoads(false);
+        setShowMemberForces(result.analysis.isStable);
+        setAnalysisResults(result.analysis);
+        setDesignResults(result.groupDesigns);
       }
-      // Get spread of forces for color calculations
-      let max = result.memberResults[0].axial;
-      let min = result.memberResults[0].axial;
-      result.memberResults.forEach((mr) => {
-        max = Math.max(max, mr.axial);
-        min = Math.min(min, mr.axial);
-      });
-
-      // Set colors based on forces
-      result.memberResults.forEach((mr) => {
-        const member = geometry?.members[mr.index.toString()];
-        if (member) {
-          member.forceColor = dataToColorScale(mr.axial, max, min);
-        }
-      });
-
-      setMemberForcesSummary({ max, min });
-      setExpandTrussLoads(false);
-      setExpandSectionProperties(false);
-      setShowMemberForces(true);
-
-      const lengthUnit = unitToLength(unitType);
-      const forceUnit = unitToForce(unitType);
-
-      const memberForcesHeaders = [
-        "Member ID",
-        "Start -> End Node",
-        `Length (${lengthUnit})`,
-        `Axial Force (${forceUnit})`,
-      ];
-
-      const memberForces = result?.memberResults.map((member) => [
-        member.index,
-        memberNodesFormatter(member.start, member.end),
-        Math.abs(member.length) < 0.0001 ? 0 : +member.length.toPrecision(4),
-        Math.abs(member.axial) < 0.0001 ? 0 : +member.axial.toPrecision(4),
-      ]);
-
-      setStandardizedForceResults({
-        memberForcesHeaders,
-        memberForces,
-        displacements: result.displacements || [],
-        member0StiffnessMatrix: result.member0StiffnessMatrix,
-        structureStiffnessMatrix: result.structureStiffnessMatrix,
-        structureReducedStiffnessMatrix: result.structureReducedStiffnessMatrix,
-        reducedForceMatrix: result.reducedForceMatrix,
-        reactions: result.reactions,
-      });
     });
-  }, [geometry?.nodes, geometry?.members, forces, unitType]);
+  }, [customMembers, customNodes]);
+
+  const updateMemberForcesStandard = useCallback(() => {
+    const forceCorrectedNodes = customNodes.map((node) => ({ ...node, Fy: -1 * (node.Fy || 0) }));
+    fetchAnalysis({ nodes: forceCorrectedNodes, members: customMembers }).then((result) => {
+      if (!result.success || !result.isStable) {
+        setAnalysisError("Analysis failed. Please refresh the page and try again.");
+      } else {
+        clearAnalysisError();
+        setExpandTrussLoads(false);
+        setShowMemberForces(result.isStable);
+        setAnalysisResults(result);
+      }
+    });
+  }, [customMembers, customNodes]);
 
   const handleSetSpan = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setSpan(event?.target?.value);
@@ -376,32 +305,6 @@ export default function StandardForm({
 
   const handleSetDepthEnd = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setDepthEnd(event?.target?.value);
-  };
-
-  const handleSetArea = (
-    memberType: string,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const newArea = e?.target?.value;
-    setAreaProps((oldAreaProps) => {
-      const newAreaProps = oldAreaProps ? { ...oldAreaProps } : {};
-      newAreaProps[memberType] = newArea;
-      areaPropsParsed.current = queryToMemberProps(DEFAULT_A, newAreaProps);
-      return newAreaProps;
-    });
-  };
-
-  const handleSetElasticMod = (
-    memberType: string,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const newElasticMod = e?.target?.value;
-    setElasticModulusProps((oldElasticModProps) => {
-      const newElasticModProps = oldElasticModProps ? { ...oldElasticModProps } : {};
-      newElasticModProps[memberType] = newElasticMod;
-      elasticModulusPropsParsed.current = queryToMemberProps(DEFAULT_E, newElasticModProps);
-      return newElasticModProps;
-    });
   };
 
   const handleDistributeLoad = (
@@ -504,17 +407,7 @@ export default function StandardForm({
 
     handleHideAllResults();
     clearValidationError();
-  };
-
-  const handleUseDefaultMember = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = event?.target?.checked;
-    setUseDefaultMember(checked ? undefined : false);
-    if (checked) {
-      setElasticModulusProps(undefined);
-      elasticModulusPropsParsed.current = queryToMemberProps(DEFAULT_E, undefined);
-      setAreaProps(undefined);
-      areaPropsParsed.current = queryToMemberProps(DEFAULT_A, undefined);
-    }
+    clearAnalysisError();
   };
 
   // Make sure category is set correctly on mounting for old links with only the truss type in the query params
@@ -554,11 +447,12 @@ export default function StandardForm({
           trussType1: string
         ) => {
           if (allNumbers([span1, height1, nWeb1, depth1, depthEnd1])) {
-            if (+span1 === 0 || height1 === 0 || depth1 === 0 || depthEnd1 === 0) {
-              setValidationError("Span, height, and depth must be non-zero");
-              return;
-            }
+            // if (+span1 === 0 || height1 === 0 || depth1 === 0 || depthEnd1 === 0) {
+            //   setValidationError("Span, height, and depth must be non-zero");
+            //   return;
+            // }
             clearValidationError();
+            clearAnalysisError();
           } else {
             setValidationError(VALIDATION_ERROR);
             return;
@@ -591,7 +485,7 @@ export default function StandardForm({
   useEffect(() => {
     handleHideAllResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [span, height, nWeb, trussType, unitType, elasticModulusProps, areaProps]);
+  }, [span, height, nWeb, trussType, unitType]);
 
   // All data has to come from refs, not from state. When unmount, state is not defined.
   const unmountWithGeometry = () => {
@@ -611,8 +505,6 @@ export default function StandardForm({
           start: mem.start,
           end: mem.end,
           groupId: getGroupIdFromType(mem.type),
-          A: getFromMemberPropsType(areaPropsParsed.current, mem.type),
-          E: getFromMemberPropsType(elasticModulusPropsParsed.current, mem.type),
         })
       );
 
@@ -639,8 +531,10 @@ export default function StandardForm({
                 <TrussGraph
                   trussHeight={trussHeight}
                   trussWidth={trussWidth}
-                  nodes={geometry.nodes}
-                  members={geometry.members}
+                  nodes={customNodes}
+                  members={customMembers}
+                  memberForceColors={memberForceColors}
+                  memberColorStyle={"force"}
                   frameWidth={frameWidth}
                   frameHeight={frameHeight}
                   showNodeLabels={showNodeLabels}
@@ -648,9 +542,7 @@ export default function StandardForm({
                   showForceArrows={showForceArrows}
                   showAxes={true}
                   memberForcesSummary={memberForcesSummary}
-                  nodeForces={(forces ?? DEFAULT_FORCES).map((row) => row.map((f) => +f))}
                   onRender={onRenderGraph}
-                  memberColor={"force"}
                 />
               </Box>
             )}
@@ -729,6 +621,11 @@ export default function StandardForm({
                   <Alert severity="error">{validationError}</Alert>
                 </Grid>
               )}
+              {analysisError && (
+                <Grid item xs={12}>
+                  <Alert severity="error">{analysisError}</Alert>
+                </Grid>
+              )}
               <Grid item xs={12} md={8}>
                 <Accordion
                   expanded={expandTrussLoads}
@@ -767,37 +664,10 @@ export default function StandardForm({
                     />
                   </AccordionDetails>
                 </Accordion>
-                <Accordion
-                  expanded={expandSectionProperties}
-                  onChange={(_e, expanded) => {
-                    setExpandSectionProperties(expanded);
-                  }}
-                  sx={{ marginTop: "1em" }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1b-content"
-                    id="panel1b-header"
-                  >
-                    <Typography>Cross-sectional Properties of Members (Optional)</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <MemberPropertiesForm
-                      useDefault={
-                        useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : useDefaultMember
-                      }
-                      setUseDefault={handleUseDefaultMember}
-                      areaProps={queryToMemberInputProps(DEFAULT_A, areaProps)}
-                      setAreaProps={handleSetArea}
-                      eModulusProps={queryToMemberInputProps(DEFAULT_E, elasticModulusProps)}
-                      setEModProps={handleSetElasticMod}
-                      unitType={unitType}
-                    />
-                  </AccordionDetails>
-                </Accordion>
               </Grid>
               <Grid item xs={12} md={4} className="stacked-buttons">
                 <CalculateOnEmailButton updateForces={updateMemberForcesStandard} />
+                <DesignButton onDesign={onDesignMembers} />
                 <Button
                   variant="outlined"
                   fullWidth
@@ -818,56 +688,34 @@ export default function StandardForm({
                 </Button>
               </Grid>
 
-              {!hideCalculations || (
-                <Grid item xs={12}>
-                  <MemberForceResults
-                    showResult={showMemberForces}
-                    headers={standardizedForceResults.memberForcesHeaders}
-                    memberForceResults={standardizedForceResults.memberForces}
-                  />
-                </Grid>
-              )}
+              <Grid item xs={12}>
+                <MemberForceResults
+                  showResult={showMemberForces && hideCalculations}
+                  results={analysisResults?.memberResults || []}
+                  unitType={unitType}
+                />
+              </Grid>
             </Grid>
           </Grid>
         </Grid>
       </div>
       <div id="print-only-calc-report" className="print-only-calc-report">
-        {geometry && (
+        {analysisResults && (
           <CalculationReport
-            geometryProps={{
-              trussHeight: trussHeight,
-              trussWidth: trussWidth,
-              nodes: geometry.nodes,
-              members: updateGroupId(geometry.members),
-              frameWidth: frameWidth,
-              frameHeight: frameHeight,
-              showNodeLabels: showNodeLabels,
-              showMemberLabels: showMemberLabels,
-              showForceArrows: showForceArrows,
-              memberForcesSummary: memberForcesSummary,
-              nodeForces: (forces ?? DEFAULT_FORCES).map((row) => row.map((f) => +f)),
-            }}
-            memberForces={standardizedForceResults.memberForces}
-            memberForcesHeaders={standardizedForceResults.memberForcesHeaders}
-            memberProperties={Object.values(geometry.members).map((mem, index) => ({
-              id: index,
-              A: getFromMemberPropsType(queryToMemberProps(DEFAULT_A, areaProps), mem.type),
-              E: getFromMemberPropsType(
-                queryToMemberProps(DEFAULT_E, elasticModulusProps),
-                mem.type
-              ),
-            }))}
-            displacements={standardizedForceResults.displacements || []}
-            member0StiffnessMatrix={standardizedForceResults.member0StiffnessMatrix}
-            structureStiffnessMatrix={standardizedForceResults.structureStiffnessMatrix}
-            structureReducedStiffnessMatrix={
-              standardizedForceResults.structureReducedStiffnessMatrix
-            }
-            reducedForceMatrix={standardizedForceResults.reducedForceMatrix}
-            useDefaultMemberProps={useDefaultMember == null ? DEFAULT_USE_DEFAULT_MEMBER : false}
-            unitType={unitType}
-            reactions={standardizedForceResults.reactions || []}
+            nodes={customNodes}
+            members={analysisResults.members}
+            memberResults={analysisResults.memberResults}
             memberGroups={customGroups.map((name, id) => ({ id, name }))}
+            displacements={analysisResults.displacements || []}
+            reactions={analysisResults.reactions}
+            member0StiffnessMatrix={analysisResults.member0StiffnessMatrix}
+            structureStiffnessMatrix={analysisResults.structureStiffnessMatrix}
+            structureReducedStiffnessMatrix={analysisResults.structureReducedStiffnessMatrix}
+            reducedForceMatrix={analysisResults.reducedForceMatrix}
+            frameHeight={frameHeight}
+            frameWidth={frameWidth}
+            unitType={unitType}
+            memberGroupDesigns={designResults}
           />
         )}
       </div>

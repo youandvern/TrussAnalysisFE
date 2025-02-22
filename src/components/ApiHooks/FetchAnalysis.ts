@@ -1,5 +1,5 @@
 import { ApiCustomAnalysisResults, CustomAnalysisRequest } from "../../Types/ApiAnalysisResults";
-import { API_URL } from "../FetchGeometry";
+import { API_URL } from "./FetchGeometry";
 
 export const fetchAnalysis = async (
   request: CustomAnalysisRequest

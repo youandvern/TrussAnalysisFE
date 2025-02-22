@@ -4,45 +4,41 @@ import "./style.css";
 
 import React from "react";
 import { GLOBAL_THEME } from "../../App";
+import { CustomMember, CustomNode } from "../../Types/ApiAnalysisResults";
 import { MemberForcesSummary } from "../../Types/ApiForces";
-import { Members, Nodes } from "../../Types/ApiGeometry";
 import { dataToColorScale, getColorFromId } from "../Utilities/DataToColorscale";
 
 // force the truss to start at (0, 0)
-function getPositionCorrectedNodes(nodes: Nodes): Nodes {
-  const [minX, minY] = Object.values(nodes).reduce(
+function getPositionCorrectedNodes(nodes: CustomNode[]): CustomNode[] {
+  const [minX, minY] = nodes.reduce(
     (prev, cur) => [Math.min(prev[0], cur.x), Math.min(prev[1], cur.y)],
-    [nodes["0"].x, nodes["0"].y]
+    [nodes[0].x, nodes[0].y]
   );
 
   const xCorrection = 0 - minX;
   const yCorrection = 0 - minY;
 
-  return Object.keys(nodes).reduce((acc, key) => {
-    const originalNode = nodes[key];
-
+  return nodes.map((originalNode) => {
     const correctedX = originalNode.x + xCorrection;
     const correctedY = originalNode.y + yCorrection;
 
-    acc[key] = { ...originalNode, x: correctedX, y: correctedY };
-
-    return acc;
-  }, {} as Nodes);
+    return { ...originalNode, x: correctedX, y: correctedY };
+  });
 }
 
 export interface GeometryProps {
   trussHeight: number;
   trussWidth: number;
-  nodes: Nodes;
-  members: Members;
-  memberColor?: "group" | "force";
+  nodes: CustomNode[];
+  members: CustomMember[];
+  memberForceColors: string[];
+  memberColorStyle?: "group" | "force";
   frameHeight: number;
   frameWidth: number;
   showNodeLabels: boolean;
   showMemberLabels: boolean;
   showForceArrows: boolean;
   showAxes?: boolean;
-  nodeForces?: number[][];
   memberForcesSummary?: MemberForcesSummary;
   keySeed?: string;
   onRender?: () => void;
@@ -54,14 +50,14 @@ export default function TrussGraph({
   trussWidth,
   nodes,
   members,
-  memberColor,
+  memberForceColors,
+  memberColorStyle,
   frameHeight,
   frameWidth,
   showNodeLabels,
   showMemberLabels,
   showForceArrows,
   showAxes = true,
-  nodeForces,
   memberForcesSummary,
   keySeed = "0",
   onRender,
@@ -284,7 +280,7 @@ export default function TrussGraph({
         {showAxes &&
           axes(0, frameHeight - 5 * nodeSizeScaled - border * fscale, 5 * nodeSizeScaled)}
 
-        {Object.entries(members).map(([iMember, member]) => {
+        {members.map((member, iMember) => {
           const points = {
             x1: correctedNodes[member.start].x * fscale,
             y1: correctedNodes[member.start].y * fscale,
@@ -296,9 +292,9 @@ export default function TrussGraph({
               <Line
                 points={[points.x1, -1 * points.y1, points.x2, -1 * points.y2]}
                 stroke={
-                  memberColor === "force" && member.forceColor
-                    ? member.forceColor
-                    : memberColor === "group" && member.groupId
+                  memberColorStyle === "force" && memberForceColors[iMember]
+                    ? memberForceColors[iMember]
+                    : memberColorStyle === "group" && member.groupId
                     ? getColorFromId(member.groupId)
                     : GLOBAL_THEME.palette.primary.main
                 }
@@ -309,33 +305,39 @@ export default function TrussGraph({
                 fillAfterStrokeEnabled
               />
               {showMemberLabels &&
-                memberLabel(points.x1, -points.y1, points.x2, -points.y2, iMember, nodeSizeScaled)}
+                memberLabel(
+                  points.x1,
+                  -points.y1,
+                  points.x2,
+                  -points.y2,
+                  `${iMember}`,
+                  nodeSizeScaled
+                )}
             </React.Fragment>
           );
         })}
 
-        {Object.entries(correctedNodes).map(([iNode, node]) => {
-          const thisNodeForce = showForceArrows && nodeForces && nodeForces[+iNode];
+        {correctedNodes.map((node, iNode) => {
           const nodeX = node.x * fscale;
           const nodeY = node.y * fscale;
           return (
             <React.Fragment key={`${keySeed}-node-${iNode}`}>
-              {node.fixity === "pin" &&
+              {node.support === "pin" &&
                 pinMarker(nodeX, nodeY - nodeSizeScaled / 2, nodeSizeScaled)}
-              {node.fixity === "roller" &&
+              {node.support === "roller" &&
                 rollerMarker(nodeX, nodeY - nodeSizeScaled, nodeSizeScaled)}
-              {node.fixity === "yroller" &&
+              {node.support === "yroller" &&
                 yRollerMarker(nodeX + nodeSizeScaled, nodeY, nodeSizeScaled)}
-              {thisNodeForce &&
-                forceArrows(nodeX, -nodeY, thisNodeForce[1], thisNodeForce[2], 4 * nodeSizeScaled)}
+              {showForceArrows &&
+                forceArrows(nodeX, -nodeY, node.Fx || 0, node.Fy || 0, 4 * nodeSizeScaled)}
               <Circle x={nodeX} y={-nodeY} fill="black" radius={nodeSizeScaled} />
-              {showNodeLabels && nodeLabel(nodeX, -1 * nodeY, iNode, nodeSizeScaled)}
+              {showNodeLabels && nodeLabel(nodeX, -1 * nodeY, `${iNode}`, nodeSizeScaled)}
             </React.Fragment>
           );
         })}
 
         {memberForcesSummary &&
-          memberColor === "force" &&
+          memberColorStyle === "force" &&
           forceScale(
             trussWidth * fscale + 1 * nodeSizeScaled,
             -(0.8 * frameHeight),

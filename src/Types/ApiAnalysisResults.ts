@@ -12,9 +12,12 @@ export type CustomNode = {
 export type CustomMember = {
   start: number;
   end: number;
-  A?: number;
-  E?: number;
   groupId: number;
+};
+
+export type AnalysisMember = CustomMember & {
+  aCross: number;
+  eMod: number;
 };
 
 export type MemberGroup = {
@@ -51,6 +54,7 @@ export type ApiCustomAnalysisResultsSuccess = {
   structureStiffnessMatrix: number[][];
   structureReducedStiffnessMatrix: number[][];
   reducedForceMatrix: number[];
+  members: AnalysisMember[];
 };
 
 export type ApiCustomAnalysisResults =

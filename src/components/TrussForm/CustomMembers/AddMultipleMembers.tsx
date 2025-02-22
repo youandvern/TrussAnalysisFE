@@ -42,16 +42,8 @@ export default function AddMultipleMembers({ onCreate, unitType, nodeCount, memb
       );
       return true;
     }
-
-    const validatedMember = validateMember(
-      nodeCount,
-      row[0],
-      row[1],
-      row[2],
-      row[3],
-      row[4],
-      memberGroups.length
-    );
+    //validateMember(nodeCount, start, end, memberGroup, memberGroups.length);
+    const validatedMember = validateMember(nodeCount, row[0], row[1], row[2], memberGroups.length);
     if (!validatedMember.valid) {
       setErrorMesage(`Member ${rowIndex + 1} out of ${rowCount}: ${validatedMember.error}`);
       return true;

@@ -2,7 +2,6 @@ import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "
 import { FormEvent, useState } from "react";
 import { CustomMember, MemberGroup } from "../../../Types/ApiAnalysisResults";
 import NumInput from "../../NumInput";
-import { unitToInputArea, unitToInputStress } from "../../UnitSelector";
 import { validateMember } from "./member-validator";
 
 type Props = {
@@ -15,23 +14,13 @@ type Props = {
 export default function AddOneMember({ onCreate, unitType, nodeCount, memberGroups }: Props) {
   const [start, setStart] = useState("0");
   const [end, setEnd] = useState("0");
-  const [area, setArea] = useState("1");
-  const [eMod, setEmod] = useState("1");
   const [memberGroup, setMemberGroup] = useState(0);
   const [validationError, setValidationError] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    const validMember = validateMember(
-      nodeCount,
-      start,
-      end,
-      area,
-      eMod,
-      memberGroup,
-      memberGroups.length
-    );
+    const validMember = validateMember(nodeCount, start, end, memberGroup, memberGroups.length);
 
     if (!validMember.valid) {
       setValidationError(validMember.error);
@@ -41,8 +30,6 @@ export default function AddOneMember({ onCreate, unitType, nodeCount, memberGrou
         {
           start: validMember.start,
           end: validMember.end,
-          A: validMember.area,
-          E: validMember.eMod,
           groupId: validMember.groupId,
         },
       ]);
@@ -57,7 +44,7 @@ export default function AddOneMember({ onCreate, unitType, nodeCount, memberGrou
             <Alert severity="error">{validationError}</Alert>
           </Grid>
         )}
-        <Grid item xs={6} md={3}>
+        <Grid item xs={6}>
           <NumInput
             label="starting node"
             value={start}
@@ -67,7 +54,7 @@ export default function AddOneMember({ onCreate, unitType, nodeCount, memberGrou
             max={999}
           />
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid item xs={6}>
           <NumInput
             label="ending node"
             value={end}
@@ -78,28 +65,6 @@ export default function AddOneMember({ onCreate, unitType, nodeCount, memberGrou
           />
         </Grid>
 
-        <Grid item xs={6} md={3}>
-          <NumInput
-            label="cross-sectional area"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            unit={unitToInputArea(unitType)}
-            min={0}
-            max={999999}
-            step="any"
-          />
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <NumInput
-            label="elastic modulus"
-            value={eMod}
-            onChange={(e) => setEmod(e.target.value)}
-            unit={unitToInputStress(unitType)}
-            min={0}
-            max={999999}
-            step="any"
-          />
-        </Grid>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
             <InputLabel id="member-group-select-label">member group</InputLabel>
@@ -118,6 +83,7 @@ export default function AddOneMember({ onCreate, unitType, nodeCount, memberGrou
             </Select>
           </FormControl>
         </Grid>
+
         <Grid item xs={12} md={6}>
           <Button
             variant="outlined"

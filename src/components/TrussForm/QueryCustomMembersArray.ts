@@ -2,15 +2,15 @@ import { CustomMember } from "../../Types/ApiAnalysisResults";
 
 function stringArrayToMember(ar?: string[]): CustomMember {
   try {
-    if (!ar || ar.length < 4) {
+    if (!ar || ar.length < 2) {
       return { start: 0, end: 1, groupId: 0 };
     }
 
-    if (ar.length < 5) {
-      return { start: parseInt(ar[0]), end: parseInt(ar[1]), A: +ar[2], E: +ar[3], groupId: 0 };
+    if (ar.length < 3) {
+      return { start: parseInt(ar[0]), end: parseInt(ar[1]), groupId: 0 };
     }
 
-    return { start: parseInt(ar[0]), end: parseInt(ar[1]), A: +ar[2], E: +ar[3], groupId: +ar[4] };
+    return { start: parseInt(ar[0]), end: parseInt(ar[1]), groupId: +ar[2] };
   } catch (e) {
     return { start: 0, end: 1, groupId: 0 };
   }
@@ -33,9 +33,7 @@ function encodeCustomMemberArrayDelimited(
   }
 
   return array
-    .map((member) =>
-      [member.start, member.end, member.A || 1, member.E || 1, member.groupId].join(PARAM_DELIMITER)
-    )
+    .map((member) => [member.start, member.end, member.groupId].join(PARAM_DELIMITER))
     .join(MEMBER_DELIMITER);
 }
 
