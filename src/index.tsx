@@ -9,8 +9,7 @@ import HomeBar from "./shared/components/HomeBar/HomeBar";
 import { initializeMathJax } from "./shared/mathjaxSetup";
 
 // TODO:
-// - Drop meters support for now
-// - Remove query params as state and default vals
+// - Add back geometry transfer from standard to custom
 // - Separate out pages for design steps
 // - Add member group summary section to calc report (by load case) - max compression, max tension, longest compression
 // - Replace analysis call with design call

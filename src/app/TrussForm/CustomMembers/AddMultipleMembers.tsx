@@ -2,7 +2,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
-import { unitToInputArea, unitToInputStress } from "../../../features/geometry/UnitSelector";
+import { unitToInputArea, unitToInputStress } from "../../../shared/components/UnitSelector";
 import { CustomMember, MemberGroup } from "../../../shared/types/ApiAnalysisResults";
 import { csvToArray } from "../utils";
 import { validateMember } from "./member-validator";

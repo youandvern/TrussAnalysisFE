@@ -19,12 +19,12 @@ import DesignButton from "../../features/design/SubmitButtons/DesignButton";
 import { FetchGeometry } from "../../features/geometry/hooks/FetchGeometry";
 import { TrussCategory } from "../../features/geometry/TrussCategorySelector";
 import { ROOF_TRUSS_TYPES, TRUSS_TYPES } from "../../features/geometry/TrussStyleSelector";
-import { unitToForce, unitToLength } from "../../features/geometry/UnitSelector";
 import CalculationReport from "../../features/report/CalculationReport";
 import DataTable from "../../shared/components/DataTableControlled";
 import NumInput from "../../shared/components/FormComponents/NumInput";
 import NumSlider from "../../shared/components/FormComponents/NumSlider";
 import TrussGraph from "../../shared/components/TrussGraph";
+import { unitToForce, unitToLength } from "../../shared/components/UnitSelector";
 import {
   ApiCustomAnalysisResultsSuccess,
   CustomMember,
@@ -42,7 +42,6 @@ import {
   distanceAlongAxis,
   distanceBetweenPoints,
   hideCalculationsDiv,
-  numberValOrDefault,
   printPdf,
   showCalculationsDiv,
 } from "./utils";
@@ -447,12 +446,18 @@ export default function StandardForm({
   );
 
   useEffect(() => {
+    if (!allNumbers([span, height, depth, depthEnd])) {
+      setValidationError(VALIDATION_ERROR);
+      return;
+    }
+    clearValidationError();
+
     throttledFetchGeometry(
-      numberValOrDefault(span, DEFAULT_SPAN),
-      numberValOrDefault(height, DEFAULT_HEIGHT),
-      nWeb || DEFAULT_NWEB,
-      numberValOrDefault(depth, DEFAULT_DEPTH),
-      numberValOrDefault(depthEnd, DEFAULT_DEPTH_END),
+      +span,
+      +height,
+      nWeb,
+      +depth,
+      +depthEnd,
       trussType || DEFAULT_TRUSS_TYPE
     );
   }, [span, height, nWeb, depth, depthEnd, trussType, throttledFetchGeometry]);
@@ -575,7 +580,7 @@ export default function StandardForm({
                 <Container>
                   <NumSlider
                     label="Number of Web Bays (per side):"
-                    value={nWeb ?? DEFAULT_NWEB}
+                    value={nWeb}
                     onChange={setNWeb}
                     min={1}
                     max={

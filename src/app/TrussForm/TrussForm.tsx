@@ -6,8 +6,8 @@ import TrussStyleSelector, {
   ROOF_TRUSS_TYPES,
   TRUSS_TYPES,
 } from "../../features/geometry/TrussStyleSelector";
-import UnitSelector, { US_UNIT } from "../../features/geometry/UnitSelector";
 import LabeledSwitch from "../../shared/components/FormComponents/LabeledSwitch";
+import { US_UNIT } from "../../shared/components/UnitSelector";
 import { CustomMember, CustomNode } from "../../shared/types/ApiAnalysisResults";
 import CustomForm from "./CustomForm";
 import StandardForm from "./StandardForm";
@@ -93,10 +93,6 @@ export default function TrussForm() {
     setShowForceArrows(event?.target?.checked);
   };
 
-  const handleChangeUnitType = (_event: React.MouseEvent<HTMLElement>, value: any) => {
-    setUnitType(value);
-  };
-
   // reset truss graph scaling to fit inside component when window size changes
   useEffect(() => {
     function resizeGraph() {
@@ -123,27 +119,27 @@ export default function TrussForm() {
         <Grid container columnSpacing={2} rowSpacing={3}>
           <Grid item xs={12}>
             <TrussStyleSelector
-              trussType={trussType || DEFAULT_TRUSS_TYPE}
+              trussType={trussType}
               handleChange={handleChangeTrussType}
-              trussCategory={trussCategory || DEFAULT_TRUSS_CATEGORY}
+              trussCategory={trussCategory}
               handleTrussCategoryChange={handleChangeCategory}
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={3}>
+          <Grid item xs={6} md={3}>
             <LabeledSwitch
               label="Node Labels:"
               checked={showNodeLabels}
               handleChange={handleShowNodeLabels}
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={3}>
+          <Grid item xs={6} md={3}>
             <LabeledSwitch
               label="Member Labels:"
               checked={showMemberLabels}
               handleChange={handleShowMemberLabels}
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={3}>
+          <Grid item xs={6} md={3}>
             <LabeledSwitch
               label="Force Arrows:"
               checked={showForceArrows}
@@ -151,7 +147,7 @@ export default function TrussForm() {
             />
           </Grid>
           {canShowMemberGroups && (
-            <Grid item xs={6} sm={6} md={3}>
+            <Grid item xs={6} md={3}>
               <LabeledSwitch
                 label="Member Groups:"
                 checked={showMemberGroups}
@@ -159,17 +155,6 @@ export default function TrussForm() {
               />
             </Grid>
           )}
-          <Grid
-            item
-            xs={canShowMemberGroups ? 12 : 6}
-            sm={canShowMemberGroups ? 6 : 12}
-            md={canShowMemberGroups ? 12 : 3}
-            display={"flex"}
-            justifyContent={"end"}
-            paddingRight={2}
-          >
-            <UnitSelector unitType={unitType} handleChange={handleChangeUnitType} />
-          </Grid>
         </Grid>
       </div>
       {trussCategory === "custom" ? (
@@ -193,7 +178,7 @@ export default function TrussForm() {
           showNodeLabels={showNodeLabels}
           showMemberLabels={showMemberLabels}
           showForceArrows={showForceArrows}
-          trussCategory={trussCategory || DEFAULT_TRUSS_CATEGORY}
+          trussCategory={trussCategory}
           trussType={trussType}
           unitType={unitType}
           frameWidth={frameWidth}

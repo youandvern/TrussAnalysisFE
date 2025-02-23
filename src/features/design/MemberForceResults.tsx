@@ -1,8 +1,8 @@
 import { Collapse, Container } from "@mui/material";
 import DataTable from "../../shared/components/DataTableControlled";
+import { unitToForce, unitToLength } from "../../shared/components/UnitSelector";
 import { MemberAnalysisResults } from "../../shared/types/ApiAnalysisResults";
 import { memberNodesFormatter } from "../../shared/utils/memberNodesFormatter";
-import { unitToForce, unitToLength } from "../geometry/UnitSelector";
 
 interface MemberForceResultProps {
   showResult: boolean;

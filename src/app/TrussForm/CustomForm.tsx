@@ -6,9 +6,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { fetchAnalysis } from "../../features/design/hooks/FetchAnalysis";
 import MemberForceResults from "../../features/design/MemberForceResults";
 import CalculateOnEmailButton from "../../features/design/SubmitButtons/AnalyzeOnEmail";
-import { unitToForce, unitToLength } from "../../features/geometry/UnitSelector";
 import CalculationReport from "../../features/report/CalculationReport";
 import TrussGraph from "../../shared/components/TrussGraph";
+import { unitToForce, unitToLength } from "../../shared/components/UnitSelector";
 import {
   ApiCustomAnalysisResultsSuccess,
   CustomMember,

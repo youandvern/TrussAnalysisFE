@@ -4,6 +4,14 @@ import { useMemo } from "react";
 import DataTableSimple from "../../shared/components/DataTableSimple";
 import TrussGraph from "../../shared/components/TrussGraph";
 import {
+  unitToAreaFactorInputToCalc,
+  unitToForce,
+  unitToInputLength,
+  unitToInputStress,
+  unitToLength,
+  unitToStressFactorInputToCalc,
+} from "../../shared/components/UnitSelector";
+import {
   AnalysisMember,
   CustomMember,
   CustomNode,
@@ -15,14 +23,6 @@ import { MemberGroupDesignResults } from "../../shared/types/ApiDesignResults";
 import { dataToColorScale, getColorFromId } from "../../shared/utils/DataToColorscale";
 import { summarizeMemberForces } from "../../shared/utils/memberForces";
 import { memberNodesFormatter } from "../../shared/utils/memberNodesFormatter";
-import {
-  unitToAreaFactorInputToCalc,
-  unitToForce,
-  unitToInputLength,
-  unitToInputStress,
-  unitToLength,
-  unitToStressFactorInputToCalc,
-} from "../geometry/UnitSelector";
 import CalcReport from "./efficalc/CalcReport";
 import EndNodeSymbol from "./images/EndNodeSymbol.png";
 import GeneralMemberDepiction from "./images/GeneralMemberDepiction.png";
