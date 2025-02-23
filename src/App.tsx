@@ -1,6 +1,6 @@
 import { Container, createTheme, ThemeProvider } from "@mui/material";
 import "./App.css?v=1";
-import TrussForm from "./components/TrussForm/TrussForm";
+import TrussForm from "./app/TrussForm/TrussForm";
 
 const GLOBAL_THEME = createTheme({
   breakpoints: {

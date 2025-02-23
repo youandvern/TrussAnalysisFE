@@ -3,12 +3,15 @@ import * as ReactDOMClient from "react-dom/client";
 import { BrowserRouter, Route } from "react-router-dom";
 import { QueryParamProvider } from "use-query-params";
 import App from "./App";
-import { initializeMathJax } from "./components/CalculationReport/mathjaxSetup";
-import HomeBar from "./components/HomeBar/HomeBar";
 import "./index.css?v=1";
 import reportWebVitals from "./reportWebVitals";
+import HomeBar from "./shared/components/HomeBar/HomeBar";
+import { initializeMathJax } from "./shared/mathjaxSetup";
 
 // TODO:
+// - Drop meters support for now
+// - Remove query params as state and default vals
+// - Separate out pages for design steps
 // - Add member group summary section to calc report (by load case) - max compression, max tension, longest compression
 // - Replace analysis call with design call
 // - Add design results and report for each member group

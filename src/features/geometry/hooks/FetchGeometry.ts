@@ -1,0 +1,63 @@
+import ApiGeometry, { ApiGeometryRequest } from "../../../shared/types/ApiGeometry";
+
+// export const API_URL = "https://api.encompapp.com";
+export const API_URL = "http://127.0.0.1:8000";
+
+interface FetchObject {
+  show: boolean;
+  data: ApiGeometry;
+}
+
+export const FetchGeometry = (
+  span: number,
+  height: number,
+  nWeb: number,
+  trussDepth?: number,
+  trussDepthEnd?: number,
+  trussType?: string
+): Promise<FetchObject> => {
+  const depth = ["ParallelChordRoofTruss", "ScissorTruss", "SemiParallelChordRoofTruss"].includes(
+    trussType || ""
+  )
+    ? trussDepth
+    : undefined;
+  const depthEnd = trussType === "SemiParallelChordRoofTruss" ? trussDepthEnd : undefined;
+
+  const request_dict = {
+    span: span,
+    height: height,
+    nWeb: nWeb,
+    trussDepth: depth,
+    trussDepthEnd: depthEnd,
+    trussType: trussType,
+  } as ApiGeometryRequest;
+
+  const fetchData = async () => {
+    let show = false;
+    let data = {
+      nodes: { 1: { x: 0, y: 0, fixity: "pinned" }, 2: { x: 0, y: 1, fixity: "pinned" } },
+      members: { 1: { start: 2, end: 1, type: "chord" } },
+    } as ApiGeometry;
+
+    const res = await fetch(`${API_URL}/api/geometry/`, {
+      method: "POST",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(request_dict),
+    });
+
+    const unparsed_data = (await res.json()) as ApiGeometry;
+
+    if (unparsed_data.nodes && unparsed_data.members) {
+      data = unparsed_data;
+      show = true;
+    }
+
+    return { show, data };
+  };
+
+  return fetchData();
+};
