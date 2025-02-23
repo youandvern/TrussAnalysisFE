@@ -1,6 +1,5 @@
+import { Grid, Slider, Typography } from "@mui/material/";
 import React from "react";
-import "./style.css";
-import { Grid, Typography, Slider } from "@mui/material/";
 
 // expected properties given to NumSlider
 interface SlideProps {

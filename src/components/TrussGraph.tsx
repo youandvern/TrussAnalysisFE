@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Arrow, Circle, Label, Layer, Line, Rect, Stage, Tag, Text } from "react-konva";
-import "./style.css";
 
 import React from "react";
 import { GLOBAL_THEME } from "../App";

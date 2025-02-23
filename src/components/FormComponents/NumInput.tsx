@@ -1,6 +1,5 @@
 import { FormControl, InputAdornment, InputLabel, OutlinedInput, Tooltip } from "@mui/material/";
 import React from "react";
-import "./style.css";
 
 // expected properties given to NumInput
 interface NumProps {

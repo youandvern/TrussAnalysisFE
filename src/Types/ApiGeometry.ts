@@ -1,5 +1,3 @@
-import { MemberPropsType } from "../components/MemberPropertiesForm";
-
 export default interface ApiGeometry {
   nodes: Nodes;
   members: Members;
@@ -29,13 +27,11 @@ export interface Member {
   forceColor?: string;
 }
 
-export interface ApiGeometryGlobal {
+export interface ApiGeometryRequest {
   span: number;
   height: number;
   nWeb: number;
   trussDepth?: number;
   trussDepthEnd?: number;
   trussType?: string;
-  eMod?: MemberPropsType;
-  aCross?: MemberPropsType;
 }

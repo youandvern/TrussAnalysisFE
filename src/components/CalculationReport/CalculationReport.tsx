@@ -214,7 +214,7 @@ export default function CalculationReport({
     <div className="calc-report-container" id="calc-report-container">
       <h1>Truss Analysis Calculations</h1>
       <Typography variant="subtitle1" color="primary" sx={{ fontWeight: "bold" }} gutterBottom>
-        Powered by Encomp
+        Powered by Efficalc
       </Typography>
       <h3 className="no-break">1. Truss Geometry</h3>
       <p>

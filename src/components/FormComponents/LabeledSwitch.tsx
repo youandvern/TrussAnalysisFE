@@ -1,6 +1,5 @@
+import { Switch, Typography } from "@mui/material/";
 import React from "react";
-import "./style.css";
-import { Typography, Switch } from "@mui/material/";
 
 // expected properties given to Labeled Switch
 interface LabeledSwitchProps {

@@ -79,7 +79,7 @@ This application was built to simplify and automate truss design for the most co
 - [MUI](https://mui.com/)
 - [React.js](https://reactjs.org/)
 - [TrussAnalysis](https://github.com/youandvern/TrussAnalysis)
-- [Encomp](https://github.com/youandvern/encomp)
+- [Efficalc](https://github.com/youandvern/efficalc)
 - [html2pdf.js](https://www.npmjs.com/package/html-to-pdf-js)
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
 
@@ -119,7 +119,7 @@ To get a local copy up and running follow these simple example steps.
 
 ## Usage
 
-To see this package in action, check out the [Truss Analysis Tool](https://truss-analysis.encompapp.com/)
+To see this package in action, check out the [Truss Analysis Tool](https://trussanalysis.com/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
