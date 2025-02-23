@@ -1,6 +1,5 @@
 import { Grid, Theme, useMediaQuery } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import { StringParam, useQueryParam } from "use-query-params";
 import { TrussCategory } from "../../features/geometry/TrussCategorySelector";
 import TrussStyleSelector, {
   BRIDGE_TRUSS_TYPES,
@@ -12,7 +11,6 @@ import LabeledSwitch from "../../shared/components/FormComponents/LabeledSwitch"
 import { CustomMember, CustomNode } from "../../shared/types/ApiAnalysisResults";
 import CustomForm from "./CustomForm";
 import StandardForm from "./StandardForm";
-import { CategoryParam } from "./StringQueries";
 import "./style.css";
 
 const DEFAULT_TRUSS_CATEGORY: TrussCategory = "bridge";
@@ -34,11 +32,8 @@ export default function TrussForm() {
   const [graphRendered, setGraphRendered] = useState(false);
   const onRenderGraph = () => setGraphRendered(true);
 
-  const [trussType = DEFAULT_TRUSS_TYPE, setTrussType] = useQueryParam("trussType", StringParam);
-  const [trussCategory = DEFAULT_TRUSS_CATEGORY, setTrussCategory] = useQueryParam(
-    "cat",
-    CategoryParam
-  );
+  const [trussType, setTrussType] = useState<string>(DEFAULT_TRUSS_TYPE);
+  const [trussCategory, setTrussCategory] = useState(DEFAULT_TRUSS_CATEGORY);
 
   const [unitType, setUnitType] = useState(US_UNIT);
   const [showNodeLabels, setShowNodeLabels] = useState(true);
@@ -75,7 +70,7 @@ export default function TrussForm() {
           ? BRIDGE_TRUSS_TYPES[0].type
           : value === "roof"
           ? ROOF_TRUSS_TYPES[0].type
-          : undefined;
+          : "bridge";
 
       setTrussType(newTrussType);
       return value;

@@ -3,14 +3,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Box, Button, Grid, Tab, Tabs, Theme, Typography, useMediaQuery } from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ArrayParam,
-  BooleanParam,
-  NumberParam,
-  NumericObjectParam,
-  StringParam,
-  useQueryParam,
-} from "use-query-params";
 import { fetchAnalysis } from "../../features/design/hooks/FetchAnalysis";
 import MemberForceResults from "../../features/design/MemberForceResults";
 import CalculateOnEmailButton from "../../features/design/SubmitButtons/AnalyzeOnEmail";
@@ -28,9 +20,6 @@ import { dataToColorScale } from "../../shared/utils/DataToColorscale";
 import { summarizeMemberForces } from "../../shared/utils/memberForces";
 import CustomMembers from "./CustomMembers/CustomMembers";
 import CustomNodes from "./CustomNodes/CustomNodes";
-import { Query2dNumberArray } from "./Query2dNumberArray";
-import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
-import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
 import "./style.css";
 import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
 
@@ -94,33 +83,15 @@ export default function CustomForm({
   startingMembers,
   startingMemberGroups,
 }: Props) {
-  // Standard form query params to clean up
-  const [_sp_none, setSpan] = useQueryParam("span", StringParam);
-  const [_he_none, setHeight] = useQueryParam("height", StringParam);
-  const [_de_none, setDepth] = useQueryParam("depth", StringParam);
-  const [_nW_none, setNWeb] = useQueryParam("nWeb", NumberParam);
-  const [_el_none, setElasticModulusProps] = useQueryParam("eMod", NumericObjectParam);
-  const [_ar_none, setAreaProps] = useQueryParam("area", NumericObjectParam);
-  const [_us_none, setUseDefaultMember] = useQueryParam("defaultProps", BooleanParam);
-  const [_fo_none, setForces] = useQueryParam("zforces", Query2dNumberArray);
-
-  const [customNodes = startingNodes || [], setCustomNodes] = useQueryParam(
-    "cnodes",
-    QueryCustomNodesArray
-  );
-  const [customMembers = startingMembers || [], setCustomMembers] = useQueryParam(
-    "cmems",
-    QueryCustomMembersArray
-  );
+  const [customNodes, setCustomNodes] = useState(startingNodes || []);
+  const [customMembers, setCustomMembers] = useState(startingMembers || []);
 
   const defaultMemberGroup: MemberGroup = { id: 0, name: "All Members" };
-  const [memberGroupNames = startingMemberGroups || [defaultMemberGroup.name], setMemberGroups] =
-    useQueryParam("grps", ArrayParam);
+  const [memberGroupNames, setMemberGroups] = useState(
+    startingMemberGroups || [defaultMemberGroup.name]
+  );
 
-  const memberGroups: MemberGroup[] = memberGroupNames?.map((name, id) => ({
-    id,
-    name: name ?? `Group ${id}`,
-  })) || [defaultMemberGroup];
+  const memberGroups: MemberGroup[] = memberGroupNames.map((name, id) => ({ id, name }));
 
   const [isStable, setIsStable] = useState<boolean>();
   const [customError, setCustomError] = useState<string>();
@@ -282,42 +253,11 @@ export default function CustomForm({
       .catch((reason) => {
         setCustomError(`There was a problem analyzing this truss. ${reason}`);
       });
-  }, [customNodes, customMembers, unitType, setShowMemberGroups]);
+  }, [customNodes, customMembers, setShowMemberGroups]);
 
   useEffect(() => {
     handleHideAllResults();
   }, [customNodes, customMembers]);
-
-  // Populate passed-in query params when provided
-  useEffect(() => {
-    if (!customNodes?.length && !!startingNodes?.length) {
-      setCustomNodes(startingNodes);
-    }
-  }, [startingNodes]);
-
-  useEffect(() => {
-    if (!customMembers?.length && !!startingMembers?.length) {
-      setCustomMembers(startingMembers);
-    }
-  }, [startingMembers]);
-
-  useEffect(() => {
-    if (!!startingMemberGroups?.length) {
-      setMemberGroups(startingMemberGroups);
-    }
-  }, [startingMembers]);
-
-  useEffect(() => {
-    // clean up all unused query params
-    setSpan(undefined);
-    setHeight(undefined);
-    setDepth(undefined);
-    setNWeb(undefined);
-    setElasticModulusProps(undefined);
-    setAreaProps(undefined);
-    setUseDefaultMember(undefined);
-    setForces(undefined);
-  }, []);
 
   return (
     <>

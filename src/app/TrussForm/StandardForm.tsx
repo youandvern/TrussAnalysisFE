@@ -1,7 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrayParam, NumberParam, StringParam, useQueryParam } from "use-query-params";
-import "./style.css";
-
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
@@ -14,7 +10,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchAnalysis } from "../../features/design/hooks/FetchAnalysis";
 import { fetchDesign } from "../../features/design/hooks/FetchDesign";
 import MemberForceResults from "../../features/design/MemberForceResults";
@@ -40,9 +36,7 @@ import ApiGeometry, { Members, Nodes } from "../../shared/types/ApiGeometry";
 import { dataToColorScale } from "../../shared/utils/DataToColorscale";
 import { summarizeMemberForces } from "../../shared/utils/memberForces";
 import LinearLoadForm, { LoadApplication, NodeGroup, OptionalForces } from "./LinearLoadForm";
-import { Query2dNumberArray } from "./Query2dNumberArray";
-import { QueryCustomMembersArray } from "./QueryCustomMembersArray";
-import { QueryCustomNodesArray } from "./QueryCustomNodesArray";
+import "./style.css";
 import {
   allNumbers,
   distanceAlongAxis,
@@ -118,10 +112,7 @@ type Props = {
   frameHeight: number;
   graphGridRef: React.RefObject<HTMLDivElement>;
   onRenderGraph: () => void;
-  setTrussCategory: (
-    newValue: TrussCategory | null | undefined,
-    updateType?: any | undefined
-  ) => void;
+  setTrussCategory: (newValue: TrussCategory) => void;
   onUnmount: (nodes: CustomNode[], members: CustomMember[], groups: string[]) => void;
 };
 
@@ -140,25 +131,19 @@ export default function StandardForm({
   setTrussCategory,
   onUnmount,
 }: Props) {
-  // Custom form query params to clean up
-  const [_cnode, setCustomNodes] = useQueryParam("cnodes", QueryCustomNodesArray);
-  const [_cmem, setCustomMembers] = useQueryParam("cmems", QueryCustomMembersArray);
-  const [_cgroup, setCustomMemberGroups] = useQueryParam("grps", ArrayParam);
-
-  const [span = DEFAULT_SPAN, setSpan] = useQueryParam("span", StringParam);
-  const [height = DEFAULT_HEIGHT, setHeight] = useQueryParam("height", StringParam);
-  const [depth = DEFAULT_DEPTH, setDepth] = useQueryParam("depth", StringParam);
-  const [depthEnd = DEFAULT_DEPTH_END, setDepthEnd] = useQueryParam("depthEnd", StringParam);
-  const [nWeb = DEFAULT_NWEB, setNWeb] = useQueryParam("nWeb", NumberParam);
+  const [span, setSpan] = useState(`${DEFAULT_SPAN}`);
+  const [height, setHeight] = useState(`${DEFAULT_HEIGHT}`);
+  const [depth, setDepth] = useState(`${DEFAULT_DEPTH}`);
+  const [depthEnd, setDepthEnd] = useState(`${DEFAULT_DEPTH_END}`);
+  const [nWeb, setNWeb] = useState(DEFAULT_NWEB);
   const [expandTrussLoads, setExpandTrussLoads] = useState(false);
 
   const includeDepth = isDepthRelevant(trussType || "");
   const includeDepthEnd = isEndDepthRelevant(trussType || "");
 
+  const [forces, setForces] = useState([["0", "0", "0"]]);
   const [geometry, setGeometry] = useState<ApiGeometry>();
-  const nNodes = geometry?.nodes ? Object.keys(geometry.nodes).length : 0;
-  const DEFAULT_FORCES = useMemo(() => generateForces(nNodes), [nNodes]);
-  const [forces, setForces] = useQueryParam("zforces", Query2dNumberArray);
+  const [nNodes, setNNodes] = useState(0);
 
   const [validationError, setValidationError] = useState("");
   const [analysisError, setAnalysisError] = useState("");
@@ -186,7 +171,6 @@ export default function StandardForm({
     : [];
 
   const geometryRef = useRef(geometry);
-  const forcesRef = useRef(forces);
 
   const clearValidationError = () => setValidationError("");
   const clearAnalysisError = () => setAnalysisError("");
@@ -213,15 +197,14 @@ export default function StandardForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setForces((oldForces) => {
-      const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
-        if (rindex === row) {
-          const newRow = [...rowArray];
-          newRow[col] = e.target.value;
-          return newRow;
+      const newForces = oldForces.map((rowArray, rindex) => {
+        if (rindex !== row) {
+          return rowArray;
         }
-        return rowArray;
+        const newRow = [...rowArray];
+        newRow[col] = e.target.value;
+        return newRow;
       });
-      forcesRef.current = [...newForces];
       return newForces;
     });
     handleHideAllResults();
@@ -230,8 +213,7 @@ export default function StandardForm({
   };
 
   const resetForces = useCallback(() => {
-    setForces(undefined);
-    forcesRef.current = undefined;
+    setForces(generateForces(nNodes));
     handleHideAllResults();
     clearValidationError();
     clearAnalysisError();
@@ -385,8 +367,8 @@ export default function StandardForm({
   };
 
   const setNodeForces = (nodeForces: { [key: number]: OptionalForces }) => {
-    setForces((oldForces) => {
-      const newForces = (oldForces || DEFAULT_FORCES).map((rowArray, rindex) => {
+    setForces((oldForces) =>
+      oldForces.map((rowArray, rindex) => {
         const nodeIndex = rindex;
         if (nodeIndex in nodeForces) {
           const newRow = [...rowArray];
@@ -400,10 +382,8 @@ export default function StandardForm({
           return newRow;
         }
         return rowArray;
-      });
-      forcesRef.current = [...newForces];
-      return newForces;
-    });
+      })
+    );
 
     handleHideAllResults();
     clearValidationError();
@@ -428,13 +408,6 @@ export default function StandardForm({
     }
   });
 
-  // nNodes is 0 on initial render, then geometry is fetched for the first time and forces would be reset.
-  // If forces are given in URL then we don't want to reset these forces after the initial render, only afterwards.
-  const geometryFetchCount = useRef(0);
-  useEffect(() => {
-    if (geometryFetchCount.current > 1) resetForces();
-  }, [nWeb, nNodes, resetForces]);
-
   const throttledFetchGeometry = useMemo(
     () =>
       debounce(
@@ -447,10 +420,10 @@ export default function StandardForm({
           trussType1: string
         ) => {
           if (allNumbers([span1, height1, nWeb1, depth1, depthEnd1])) {
-            // if (+span1 === 0 || height1 === 0 || depth1 === 0 || depthEnd1 === 0) {
-            //   setValidationError("Span, height, and depth must be non-zero");
-            //   return;
-            // }
+            if (+span1 === 0 || height1 === 0 || depth1 === 0 || depthEnd1 === 0) {
+              setValidationError("Span, height, and depth must be non-zero");
+              return;
+            }
             clearValidationError();
             clearAnalysisError();
           } else {
@@ -459,9 +432,12 @@ export default function StandardForm({
           }
           return FetchGeometry(span1, height1, nWeb1, depth1, depthEnd1, trussType1).then(
             (result) => {
-              setGeometry(result.data);
-              geometryRef.current = result.data;
-              geometryFetchCount.current++;
+              const geo = result.data;
+              const nodes = geo?.nodes ? Object.keys(geo.nodes).length : 0;
+              setGeometry(geo);
+              setNNodes(nodes);
+              setForces(generateForces(nodes));
+              geometryRef.current = geo;
             }
           );
         },
@@ -495,8 +471,8 @@ export default function StandardForm({
           x: node.x,
           y: node.y,
           support: node.fixity ? (node.fixity as SupportType) : "free",
-          Fx: forcesRef.current ? +forcesRef.current[index][1] : 0,
-          Fy: forcesRef.current ? +forcesRef.current[index][2] : 0,
+          Fx: 0,
+          Fy: 0,
         })
       );
 
@@ -513,10 +489,6 @@ export default function StandardForm({
   };
 
   useEffect(() => {
-    // clean up unused query params on mounting
-    setCustomNodes(undefined);
-    setCustomMembers(undefined);
-    setCustomMemberGroups(undefined);
     return () => {
       unmountWithGeometry();
     };
@@ -657,7 +629,7 @@ export default function StandardForm({
                     </Button>
                     <DataTable
                       headerList={["Node", `Fx (${forceUnit})`, `Fy (${forceUnit})`]}
-                      dataList={forces || DEFAULT_FORCES}
+                      dataList={forces}
                       setDataList={updateForces}
                       firstColumnEditable={false}
                       title="Individual Node Forces"
