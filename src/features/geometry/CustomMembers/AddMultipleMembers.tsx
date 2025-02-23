@@ -2,9 +2,9 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import { csvToArray } from "../../../app/TrussForm/utils";
 import { unitToInputArea, unitToInputStress } from "../../../shared/components/UnitSelector";
 import { CustomMember, MemberGroup } from "../../../shared/types/ApiAnalysisResults";
-import { csvToArray } from "../utils";
 import { validateMember } from "./member-validator";
 
 const EXAMPLE_CSV = (

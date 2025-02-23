@@ -13,9 +13,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { numTruncator } from "../../../app/TrussForm/utils";
 import DataTableSimple from "../../../shared/components/DataTableSimple";
 import { CustomNode } from "../../../shared/types/ApiAnalysisResults";
-import { numTruncator } from "../utils";
 import AddMultipleNodes from "./AddMultipleNodes";
 import AddOneNode from "./AddOneNode";
 import EditNodeForm from "./EditNodeForm";

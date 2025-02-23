@@ -2,8 +2,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import { csvToArray } from "../../../app/TrussForm/utils";
 import { CustomNode, SupportType, supportTypes } from "../../../shared/types/ApiAnalysisResults";
-import { csvToArray } from "../utils";
 
 const EXAMPLE_CSV = (
   <span>

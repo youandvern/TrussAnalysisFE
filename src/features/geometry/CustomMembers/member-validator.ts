@@ -1,4 +1,4 @@
-import { allNumbers, isNotNumber } from "../utils";
+import { allNumbers, isNotNumber } from "../../../app/TrussForm/utils";
 
 type ValidatedMember =
   | { valid: false; error: string }

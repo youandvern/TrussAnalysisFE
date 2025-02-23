@@ -1,9 +1,9 @@
 import { Alert, Button, FormControl, Grid, InputLabel, MenuItem, Select } from "@mui/material";
 import { FormEvent, useState } from "react";
+import { allNumbers } from "../../../app/TrussForm/utils";
 import NumInput from "../../../shared/components/FormComponents/NumInput";
 import { unitToForce, unitToLength } from "../../../shared/components/UnitSelector";
 import { CustomNode, SupportType } from "../../../shared/types/ApiAnalysisResults";
-import { allNumbers } from "../utils";
 
 type Props = {
   currentX: number;

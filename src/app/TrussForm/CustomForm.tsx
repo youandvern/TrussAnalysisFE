@@ -6,6 +6,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { fetchAnalysis } from "../../features/design/hooks/FetchAnalysis";
 import MemberForceResults from "../../features/design/MemberForceResults";
 import CalculateOnEmailButton from "../../features/design/SubmitButtons/AnalyzeOnEmail";
+import CustomMembers from "../../features/geometry/CustomMembers/CustomMembers";
+import CustomNodes from "../../features/geometry/CustomNodes/CustomNodes";
 import CalculationReport from "../../features/report/CalculationReport";
 import TrussGraph from "../../shared/components/TrussGraph";
 import { unitToForce, unitToLength } from "../../shared/components/UnitSelector";
@@ -18,8 +20,6 @@ import {
 import { Nodes } from "../../shared/types/ApiGeometry";
 import { dataToColorScale } from "../../shared/utils/DataToColorscale";
 import { summarizeMemberForces } from "../../shared/utils/memberForces";
-import CustomMembers from "./CustomMembers/CustomMembers";
-import CustomNodes from "./CustomNodes/CustomNodes";
 import "./style.css";
 import { hideCalculationsDiv, printPdf, showCalculationsDiv } from "./utils";
 
